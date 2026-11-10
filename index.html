@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#d4af37">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>آصف ٹریڈرز - ہال روڈ لاہور</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- دنیا بھر کی تمام زبانوں کا انجن (Google Translate) -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ur',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <style>
+        :root {
+            --bg-base: #0b0f17;
+            --bg-card: #151c28;
+            --bg-elevated: #1e293b;
+            --gold: #d4af37;
+            --gold-light: #fef08a;
+            --emerald: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --red: #ef4444;
+            --blue: #3b82f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            direction: rtl;
+            overflow-x: hidden;
+            padding-bottom: 110px;
+            font-family: 'Noto Nastaliq Urdu', Tahoma, Arial, sans-serif;
+            line-height: 1.8;
+        }
+        .en-font { font-family: 'Poppins', sans-serif !important; direction: ltr; display: inline-block; }
+        
+        .islamic-header-bar {
+            background: linear-gradient(180deg, #064e3b 0%, #0b0f17 100%);
+            border-bottom: 2px solid var(--gold);
+            text-align: center;
+            padding: 10px;
+        }
+        .islamic-greeting { color: var(--gold-light); font-size: 18px; font-weight: bold; margin-bottom: 2px; }
+        .islamic-durood { color: #ffffff; font-size: 14px; font-weight: 600; }
+
+        header {
+            background: rgba(21, 28, 40, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 10px 14px;
+            text-align: center;
+            border-bottom: 1px solid var(--gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .brand-badge { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+        .brand-logo-box {
+            width: 44px; height: 44px; border-radius: 10px;
+            background: #0f172a; border: 2px solid var(--gold);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+        .brand-logo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .brand-text h1 { font-size: 20px; color: var(--gold); line-height: 1.2; }
+        .brand-text p { font-size: 11px; color: var(--text-muted); line-height: 1.2; }
+
+        /* Global Language Switcher Bar */
+        .global-lang-bar {
+            background: #111827;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        #google_translate_element select {
+            background: var(--bg-elevated);
+            color: var(--gold-light);
+            border: 1px solid var(--gold);
+            border-radius: 6px;
+            padding: 3px 6px;
+            font-size: 11px;
+            outline: none;
+        }
+        .goog-te-gadget { color: transparent !important; }
+        .goog-te-gadget span { display: none !important; }
+
+        .top-action-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 14px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+        }
+        .action-chip {
+            background: var(--bg-elevated); color: var(--gold-light);
+            border: 1px solid var(--gold); border-radius: 16px;
+            padding: 4px 10px; font-size: 11px; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; font-weight: bold;
+        }
+        .action-chip.cart { background: #064e3b; color: #fff; border-color: var(--emerald); }
+        .action-chip.install { background: #1e3a8a; color: #bfdbfe; border-color: #3b82f6; }
+
+        .search-bar-wrap { padding: 8px 14px 0; }
+        .search-input {
+            width: 100%; background: var(--bg-card); border: 1px solid var(--gold);
+            padding: 8px 12px; border-radius: 6px; color: #fff; font-size: 12px; outline: none; font-family: inherit;
+        }
+
+        .notice-container { padding: 8px 14px 0; }
+        .notice-card {
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid var(--gold); border-radius: 8px;
+            padding: 8px 10px; font-size: 11px; line-height: 1.7; margin-bottom: 6px;
+        }
+        .notice-card.strict { background: rgba(239, 68, 68, 0.08); border-color: #f87171; color: #fecaca; }
+
+        .payments-section { padding: 0 14px 8px; }
+        .section-header {
+            font-size: 13px; color: var(--gold); margin: 10px 0 6px;
+            display: flex; align-items: center; gap: 6px;
+            border-bottom: 1px solid var(--border); padding-bottom: 4px; font-weight: bold;
+        }
+        .payment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .payment-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 6px; text-align: center; }
+        .payment-card h4 { font-size: 11px; margin-bottom: 2px; font-family: 'Poppins', sans-serif; }
+        .payment-number { font-family: 'Poppins', monospace; font-size: 12px; font-weight: 700; color: #fff; direction: ltr; margin-bottom: 2px; }
+        .copy-btn { background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer; }
+
+        .social-row { display: flex; justify-content: center; gap: 6px; padding: 6px 14px; flex-wrap: wrap; }
+        .social-pill {
+            display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
+            border-radius: 14px; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-main); text-decoration: none; font-size: 11px; font-weight: bold;
+        }
+
+        .category-nav { display: flex; overflow-x: auto; gap: 6px; padding: 8px 14px; scrollbar-width: none; }
+        .category-nav::-webkit-scrollbar { display: none; }
+        .cat-chip {
+            white-space: nowrap; background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-muted); padding: 5px 12px; border-radius: 14px; font-size: 11px; cursor: pointer; font-family: inherit;
+        }
+        .cat-chip.active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); }
+
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding: 8px 14px; }
+        .product-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+            overflow: hidden; display: flex; flex-direction: column; position: relative;
+        }
+        .product-img-wrap { width: 100%; height: 170px; background: #0f141d; position: relative; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .product-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .badge-cat {
+            position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.85);
+            color: var(--gold-light); font-size: 9px; padding: 2px 5px; border-radius: 4px;
+            border: 1px solid rgba(212, 175, 55, 0.4); font-family: 'Poppins', sans-serif;
+        }
+        .product-info { padding: 8px; display: flex; flex-direction: column; flex: 1; }
+        .product-title { font-size: 12px; font-weight: bold; line-height: 1.4; color: #fff; margin-bottom: 4px; min-height: 34px; font-family: 'Poppins', sans-serif; direction: ltr; text-align: left; }
+        .product-specs { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; line-height: 1.3; font-family: 'Poppins', sans-serif; direction: ltr; text-align: left; }
+        .product-price { font-size: 15px; color: var(--gold); font-weight: 800; margin-top: auto; margin-bottom: 6px; font-family: 'Poppins', sans-serif; direction: ltr; text-align: left; }
+        .card-btn-row { display: flex; gap: 4px; }
+        .add-cart-btn { background: var(--bg-elevated); color: var(--gold-light); border: 1px solid var(--gold); border-radius: 4px; padding: 5px; font-size: 11px; font-weight: bold; cursor: pointer; flex: 1; }
+        .order-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 5px; border-radius: 4px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; text-decoration: none; flex: 1.2; }
+
+        #cart-modal, #admin-modal, #product-edit-modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.88); z-index: 2000; align-items: center; justify-content: center; padding: 10px;
+        }
+        .modal-sheet { background: var(--bg-card); border: 2px solid var(--gold); border-radius: 10px; padding: 14px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-sheet h3 { color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 15px; }
+
+        .invoice-paper {
+            background: #fff; color: #111; padding: 12px; border-radius: 6px; margin: 8px 0;
+            font-size: 10px; line-height: 1.4; font-family: 'Segoe UI', Tahoma, sans-serif;
+        }
+        .invoice-paper table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+        .invoice-paper th, .invoice-paper td { border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 10px; }
+
+        .input-row { margin-bottom: 6px; }
+        .input-row label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+        .input-row input, .input-row select, .input-row textarea {
+            width: 100%; background: var(--bg-base); border: 1px solid var(--border);
+            padding: 5px 8px; border-radius: 4px; color: #fff; font-size: 11px; font-family: inherit;
+        }
+        .sheet-btn { width: 100%; padding: 8px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 6px; }
+        .sheet-btn.gold { background: var(--gold); color: #000; }
+        .sheet-btn.emerald { background: var(--emerald); color: #fff; }
+        .sheet-btn.red { background: var(--red); color: #fff; }
+
+        .admin-prod-item {
+            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px;
+            padding: 5px 8px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="islamic-header-bar">
+        <div class="islamic-greeting">السلام علیکم ورحمۃ اللہ وبرکاتہ</div>
+        <div class="islamic-durood">الصلاۃ والسلام علیک یا رسول اللہ</div>
+    </div>
+
+    <!-- تمام زبانوں کا گلوبل سلیکٹر -->
+    <div class="global-lang-bar">
+        <span>🌐 عالمی زبان (World Languages):</span>
+        <div id="google_translate_element"></div>
+    </div>
+
+    <header>
+        <div class="brand-badge" onclick="handleLogoClick()">
+            <div class="brand-logo-box">
+                <img id="brand-logo-img" src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=200" alt="Asif Traders">
+            </div>
+            <div class="brand-text">
+                <h1 id="view-shop-title">آصف ٹریڈرز</h1>
+                <p><span id="view-shop-address">فرسٹ فلور، یونس سینٹر، ہال روڈ، لاہور</span> | <span class="en-font">0300-7924762</span></p>
+            </div>
+        </div>
+    </header>
+
+    <div class="top-action-bar">
+        <div class="action-chip cart" onclick="openCartModal()">
+            <i class="fa-solid fa-receipt"></i>
+            <span>انوائس / کارٹ (<span id="cart-count" class="en-font">0</span>)</span>
+        </div>
+        <button class="action-chip install" id="btn-install-app" onclick="triggerPWAInstall()" style="display:none;">
+            <i class="fa-solid fa-download"></i>
+            <span>ایپ انسٹال کریں</span>
+        </button>
+    </div>
+
+    <div class="search-bar-wrap">
+        <input type="text" id="product-search-input" class="search-input" placeholder="🔍 کوئی بھی ریسیور، اینڈرائیڈ باکس یا آئٹم تلاش کریں..." oninput="handleSearch(this.value)">
+    </div>
+
+    <div class="notice-container">
+        <div class="notice-card">
+            <strong>📢 سچائی و شفافیت برائے محترم کسٹمرز:</strong>
+            ہمارا ٹریکنگ سسٹم آصف ٹریڈرز کا اندرونی خودکار ورک فلو اسٹیٹس ظاہر کرتا ہے۔ یہ لائیو سیٹلائٹ GPS ٹریکنگ نہیں ہے تاکہ کوئی بھی خریدار کسی مغالطے میں نہ رہے۔
+        </div>
+
+        <div class="notice-card" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.08);">
+            <strong style="color:#38bdf8;">🛵 لاہور کے لوکل خریداروں کے لیے پالیسی:</strong>
+            1. کیش آن ڈیلیوری کی کنفرمیشن کے لیے <strong>500 روپے ایڈوانس</strong> جمع کروانا لازمی ہیں۔ ڈیلیوری کا وقت <strong>رات 9:00 بجے کے بعد</strong> ہوگا۔<br>
+            2. رات 9 بجے کے بعد دکان کا نمائندہ سامان خود چیک کروائے گا اور سیٹ اپ مفت لگا کر دے گا۔
+        </div>
+
+        <div class="notice-card strict">
+            <strong style="color:#f87171;">⚠️ لاہور سے باہر کوریئر اور وارنٹی پالیسی:</strong>
+            1. باہر کے شہروں کے لیے COD پر <strong>2,000 روپے ایڈوانس</strong> فیس لازمی ہے۔<br>
+            2. <strong>صرف چیکنگ وارنٹی:</strong> روانگی سے قبل واٹس ایپ پر لائیو ٹیسٹنگ ویڈیو تسلی کروائی جائے گی۔ وصولی پر <strong>ان باکسنگ ویڈیو</strong> لازمی ہے۔
+        </div>
+    </div>
+
+    <section class="payments-section">
+        <div class="section-header">
+            <i class="fa-solid fa-credit-card"></i>
+            <span>ادائیگی کے تصدیق شدہ اکاؤنٹس (<span class="en-font">0300-7924762</span>)</span>
+        </div>
+        <div class="payment-grid">
+            <div class="payment-card"><h4>JazzCash</h4><div class="payment-number">03007924762</div><button class="copy-btn" onclick="copyNum('03007924762')">کاپی</button></div>
+            <div class="payment-card"><h4>EasyPaisa</h4><div class="payment-number">03007924762</div><button class="copy-btn" onclick="copyNum('03007924762')">کاپی</button></div>
+            <div class="payment-card"><h4>UPaisa</h4><div class="payment-number">03007924762</div><button class="copy-btn" onclick="copyNum('03007924762')">کاپی</button></div>
+            <div class="payment-card"><h4>SadaPay</h4><div class="payment-number">03007924762</div><button class="copy-btn" onclick="copyNum('03007924762')">کاپی</button></div>
+        </div>
+    </section>
+
+    <div class="social-row">
+        <a href="https://wa.me/923007924762" target="_blank" class="social-pill" style="border-color:#10b981; color:#10b981;"><i class="fa-brands fa-whatsapp"></i> واٹس ایپ</a>
+        <a href="https://youtube.com" target="_blank" class="social-pill" style="border-color:#ef4444; color:#ef4444;"><i class="fa-brands fa-youtube"></i> یوٹیوب</a>
+        <a href="https://facebook.com" target="_blank" class="social-pill" style="border-color:#3b82f6; color:#3b82f6;"><i class="fa-brands fa-facebook"></i> فیس بک</a>
+    </div>
+
+    <div class="category-nav">
+        <button class="cat-chip active" onclick="filterProducts('all', this)">تمام کیٹلاگ</button>
+        <button class="cat-chip" onclick="filterProducts('android', this)">1. اینڈرائیڈ ٹی وی باکسز</button>
+        <button class="cat-chip" onclick="filterProducts('receiver', this)">2. سیٹلائٹ ریسیورز</button>
+        <button class="cat-chip" onclick="filterProducts('router', this)">3. وائی فائی راؤٹرز</button>
+        <button class="cat-chip" onclick="filterProducts('cband', this)">4. سی بینڈ ایل N بی</button>
+        <button class="cat-chip" onclick="filterProducts('dish', this)">7. ڈش اینٹینا</button>
+        <button class="cat-chip" onclick="filterProducts('server', this)">11. سرور ریچارج</button>
+    </div>
+
+    <div class="products-grid" id="products-container"></div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal">
+        <div class="modal-sheet">
+            <h3><i class="fa-solid fa-file-invoice-dollar"></i> آرڈر انوائس و کارٹ</h3>
+            <div id="cart-items-list" style="margin-bottom:8px;"></div>
+            <div class="input-row"><label>خریدار کا نام:</label><input type="text" id="cust-name" placeholder="اپنا نام لکھیں"></div>
+            <div class="input-row"><label>واٹس ایپ نمبر:</label><input type="tel" id="cust-phone" placeholder="0300xxxxxxx"></div>
+            <div class="input-row">
+                <label>شہر و ڈلیوری موڈ:</label>
+                <select id="cust-city-mode">
+                    <option value="lahore_cod">لاہور (500 ایڈوانس - رات 9 بجے ڈیلیوری)</option>
+                    <option value="outstation_cod">لاہور سے باہر (2,000 ایڈوانس - ویڈیو تسلی)</option>
+                </select>
+            </div>
+            <div class="input-row"><label>پیمنٹ TID:</label><input type="text" id="cust-tid" placeholder="ٹرانزیکشن آئی ڈی" class="en-font"></div>
+            <div class="input-row"><label>مکمل پتہ:</label><input type="text" id="cust-address" placeholder="گھر، گلی، علاقہ اور شہر"></div>
+
+            <div id="printable-invoice" class="invoice-paper">
+                <div style="text-align:center; border-bottom:1px solid #111; padding-bottom:4px;">
+                    <strong>آصف ٹریڈرز - ہال روڈ لاہور</strong> | فون: 0300-7924762<br>
+                    انوائس نمبر: <span id="inv-no">AT-9842</span>
+                </div>
+                <table>
+                    <thead><tr><th>آئٹم</th><th>تعداد</th><th>قیمت</th></tr></thead>
+                    <tbody id="inv-items-body"></tbody>
+                    <tfoot><tr><th colspan="2">کل رقم:</th><th id="inv-total-val">Rs. 0</th></tr></tfoot>
+                </table>
+            </div>
+
+            <button class="sheet-btn emerald" onclick="sendInvoiceToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> واٹس ایپ تصدیق</button>
+            <button class="sheet-btn red" onclick="closeCartModal()">بند کریں</button>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="admin-modal">
+        <div class="modal-sheet" id="admin-auth-box">
+            <h3><i class="fa-solid fa-lock"></i> سیلر ایڈمن لاگ ان</h3>
+            <div class="input-row"><label>سیکیورٹی پن (1234):</label><input type="password" id="admin-pin-input"></div>
+            <button class="sheet-btn gold" onclick="authAdmin()">لاگ ان</button>
+            <button class="sheet-btn red" onclick="closeAdmin()">بند کریں</button>
+        </div>
+
+        <div class="modal-sheet" id="admin-dash-box" style="display:none;">
+            <h3><i class="fa-solid fa-gears"></i> ماسٹر سیلر کنٹرول ڈیسک</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:12px; color:var(--gold);">پروڈکٹس مینیجر:</span>
+                <button class="sheet-btn gold" style="width:auto; padding:4px 8px; margin:0;" onclick="openNewProductModal()">+ نئی پروڈکٹ لگائیں</button>
+            </div>
+            <div id="admin-product-items-list" style="max-height:240px; overflow-y:auto;"></div>
+            <button class="sheet-btn red" onclick="closeAdmin()">ڈیش بورڈ بند کریں</button>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="product-edit-modal">
+        <div class="modal-sheet">
+            <h3>نئی پراڈکٹ شامل کریں</h3>
+            <div class="input-row"><label>پراڈکٹ کا نام:</label><input type="text" id="inp-prod-name"></div>
+            <div class="input-row">
+                <label>کیٹیگری:</label>
+                <select id="inp-prod-cat">
+                    <option value="android">1. اینڈرائیڈ ٹی وی باکسز</option>
+                    <option value="receiver">2. سیٹلائٹ ریسیورز</option>
+                    <option value="router">3. وائی فائی راؤٹرز</option>
+                    <option value="cband">4. سی بینڈ ایل N بی</option>
+                    <option value="dish">7. ڈش اینٹینا</option>
+                    <option value="server">11. سرور ریچارج</option>
+                </select>
+            </div>
+            <div class="input-row"><label>قیمت (Rs):</label><input type="number" id="inp-prod-price" class="en-font"></div>
+            <div class="input-row"><label>اسپیس و تفصیل:</label><input type="text" id="inp-prod-specs"></div>
+            <div class="input-row"><label>تصویر لنک (URL):</label><input type="text" id="inp-prod-img" class="en-font"></div>
+            <button class="sheet-btn gold" onclick="saveProductData()">محفوظ کریں</button>
+            <button class="sheet-btn red" onclick="closeProductEditModal()">بند کریں</button>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_CATALOG = [
+            { id: 1, cat: 'android', name: 'MEDIA STAR FORMULER 8K Android TV Box', specs: '8GB DDR / 128GB eMMC | 5G Fast Wi-Fi', price: 9500, img: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400' },
+            { id: 2, cat: 'android', name: 'StarSat 8K Ultra HD Android TV Box', specs: '8GB DDR / 128GB eMMC | Voice Search', price: 9800, img: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=400' },
+            { id: 3, cat: 'receiver', name: 'ECHOLINK EL-555 HD Receiver', specs: '1080p Full HD | Wi-Fi Supported', price: 3600, img: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=400' },
+            { id: 4, cat: 'cband', name: 'FOCUS PLUS C-Band Twin LNBF', specs: 'Anti-5G Filter | 4K Ultra HD', price: 2600, img: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=400' },
+            { id: 5, cat: 'server', name: 'Forever Server 12 Months Recharge', specs: 'Official Code Delivery', price: 4900, img: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400' }
+        ];
+
+        let catalog = [];
+        let cart = [];
+        let logoClicks = 0;
+        let deferredPrompt;
+
+        // Auto-update mechanism: Listen for online event
+        window.addEventListener('online', () => {
+            console.log('انٹرنیٹ فعال ہو گیا: نیا ورژن خودکار سنک ہو رہا ہے...');
+            loadData();
+            renderCatalog(catalog);
+        });
+
+        // PWA App Installation trigger
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('btn-install-app');
+            if(btn) btn.style.display = 'inline-flex';
+        });
+
+        function triggerPWAInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    deferredPrompt = null;
+                    document.getElementById('btn-install-app').style.display = 'none';
+                });
+            }
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('asif_catalog');
+            if (saved) {
+                try { catalog = JSON.parse(saved); } catch(e) { catalog = DEFAULT_CATALOG; }
+            } else {
+                catalog = DEFAULT_CATALOG;
+            }
+        }
+
+        function renderCatalog(items) {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div class="product-img-wrap"><img src="${item.img}" alt="${item.name}"></div>
+                    <div class="product-info">
+                        <div class="product-title">${item.name}</div>
+                        <div class="product-specs">${item.specs}</div>
+                        <div class="product-price">Rs. ${item.price.toLocaleString()}</div>
+                        <div class="card-btn-row">
+                            <button class="add-cart-btn" onclick="addToCart(${item.id})">+ کارٹ</button>
+                            <a href="https://wa.me/923007924762?text=${encodeURIComponent('بکنگ: ' + item.name)}" class="order-btn" target="_blank">واٹس ایپ</a>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handleSearch(val) {
+            const q = val.trim().toLowerCase();
+            const filtered = catalog.filter(i => i.name.toLowerCase().includes(q) || i.specs.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q));
+            renderCatalog(filtered);
+        }
+
+        function filterProducts(cat, btn) {
+            document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (cat === 'all') renderCatalog(catalog);
+            else renderCatalog(catalog.filter(p => p.cat === cat));
+        }
+
+        function addToCart(id) {
+            const item = catalog.find(p => p.id === id);
+            if (!item) return;
+            const found = cart.find(c => c.id === id);
+            if (found) found.qty += 1; else cart.push({ ...item, qty: 1 });
+            updateCartUI();
+            alert(item.name + ' کارٹ میں شامل ہو گیا!');
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-count').textContent = cart.reduce((acc, c) => acc + c.qty, 0);
+            const listEl = document.getElementById('cart-items-list');
+            const tbody = document.getElementById('inv-items-body');
+            listEl.innerHTML = ''; tbody.innerHTML = '';
+            let total = 0;
+            cart.forEach((c) => {
+                total += c.price * c.qty;
+                listEl.innerHTML += `<div style="font-size:11px; margin-bottom:2px;">${c.name} (${c.qty}x) = Rs. ${(c.price * c.qty).toLocaleString()}</div>`;
+                tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.qty}</td><td>Rs. ${(c.price * c.qty).toLocaleString()}</td></tr>`;
+            });
+            document.getElementById('inv-total-val').textContent = 'Rs. ' + total.toLocaleString();
+        }
+
+        function openCartModal() { document.getElementById('cart-modal').style.display = 'flex'; }
+        function closeCartModal() { document.getElementById('cart-modal').style.display = 'none'; }
+
+        function sendInvoiceToWhatsApp() {
+            if (cart.length === 0) { alert('کارٹ خالی ہے!'); return; }
+            const name = document.getElementById('cust-name').value.trim() || 'معزز خریدار';
+            const phone = document.getElementById('cust-phone').value.trim() || 'درج نہیں';
+            const tid = document.getElementById('cust-tid').value.trim() || 'زیرِ تصدیق';
+            const total = document.getElementById('inv-total-val').textContent;
+            let list = '';
+            cart.forEach((c, i) => list += `\n${i+1}. ${c.name} (${c.qty}x) = Rs. ${(c.price * c.qty).toLocaleString()}`);
+            const msg = `*آصف ٹریڈرز آرڈر انوائس!*\nنام: ${name}\nفون: ${phone}\nTID: ${tid}\nکل رقم: ${total}\nاشیاء:${list}\n\nشرائط: صرف چیکنگ وارنٹی اور ان باکسنگ ویڈیو شرط منظور ہے۔`;
+            window.open(`https://wa.me/923007924762?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function copyNum(n) { navigator.clipboard.writeText(n); alert('نمبر کاپی ہو گیا: ' + n); }
+
+        // Admin Controls
+        function handleLogoClick() {
+            logoClicks++;
+            if (logoClicks >= 3) {
+                logoClicks = 0;
+                document.getElementById('admin-modal').style.display = 'flex';
+            }
+        }
+        function closeAdmin() { document.getElementById('admin-modal').style.display = 'none'; }
+        function authAdmin() {
+            if (document.getElementById('admin-pin-input').value.trim() === '1234') {
+                document.getElementById('admin-auth-box').style.display = 'none';
+                document.getElementById('admin-dash-box').style.display = 'block';
+                renderAdminList();
+            } else alert('غلط پن!');
+        }
+
+        function renderAdminList() {
+            const list = document.getElementById('admin-product-items-list');
+            list.innerHTML = '';
+            catalog.forEach(item => {
+                list.innerHTML += `<div class="admin-prod-item"><span>${item.name}</span><button onclick="deleteProd(${item.id})" style="background:#ef4444; color:#fff; border:none; padding:2px 6px; border-radius:4px;">ڈیلیٹ</button></div>`;
+            });
+        }
+
+        function openNewProductModal() { document.getElementById('product-edit-modal').style.display = 'flex'; }
+        function closeProductEditModal() { document.getElementById('product-edit-modal').style.display = 'none'; }
+
+        function saveProductData() {
+            const name = document.getElementById('inp-prod-name').value.trim();
+            const cat = document.getElementById('inp-prod-cat').value;
+            const price = parseInt(document.getElementById('inp-prod-price').value) || 0;
+            const specs = document.getElementById('inp-prod-specs').value.trim();
+            const img = document.getElementById('inp-prod-img').value.trim() || 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400';
+            if (!name) return;
+            catalog.unshift({ id: Date.now(), cat, name, price, specs, img });
+            localStorage.setItem('asif_catalog', JSON.stringify(catalog));
+            closeProductEditModal();
+            renderAdminList();
+            renderCatalog(catalog);
+            alert('نئی پراڈکٹ لائیو ہو گئی!');
+        }
+
+        function deleteProd(id) {
+            catalog = catalog.filter(x => x.id !== id);
+            localStorage.setItem('asif_catalog', JSON.stringify(catalog));
+            renderAdminList();
+            renderCatalog(catalog);
+        }
+
+        window.onload = function() {
+            loadData();
+            renderCatalog(catalog);
+            updateCartUI();
+        };
+    </script>
+</body>
+</html>
