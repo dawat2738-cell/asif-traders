@@ -1,0 +1,23 @@
+{
+  "name": "Asif Traders - Hall Road Lahore",
+  "short_name": "Asif Traders",
+  "description": "Asif Traders - Dish, Receiver aur Satellite TV - Hall Road, Lahore",
+  "start_url": "https://dawat2738-cell.github.io/asif-traders/",
+  "scope": "https://dawat2738-cell.github.io/asif-traders/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b0f17",
+  "icons": [
+    {
+      "src": "logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
