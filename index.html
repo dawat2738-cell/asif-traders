@@ -27,13 +27,18 @@
     <!-- Google Translate Script (All 130+ World Languages) -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'ur',
-                autoDisplay: false
-            }, 'google_translate_element');
+            function initTranslate() {
+                var el = document.getElementById('google_translate_element');
+                if (!el) { setTimeout(initTranslate, 100); return; }
+                new google.translate.TranslateElement({
+                    pageLanguage: 'ur',
+                    autoDisplay: false
+                }, 'google_translate_element');
+            }
+            initTranslate();
         }
     </script>
-    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script><link type="text/css" rel="stylesheet" charset="UTF-8" href="https://www.gstatic.com/_/translate_http/_/ss/k=translate_http.tr.zZZZhVqDDCw.L.W.O/am=AAAAGA/d=0/rs=AN8SPfoLUx_Ym_17qc4vo8M4OsmuPiHCJQ/m=el_main_css"><script type="text/javascript" charset="UTF-8" src="https://translate.googleapis.com/_/translate_http/_/js/k=translate_http.tr.en_US.6r8DzUzrmSI.O/am=AAAAGA/d=1/ed=1/rs=AN8SPfrl7zveDiEcafEkH7pXaL1IRXSSbg/m=el_main"></script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
     <style>
         :root {
