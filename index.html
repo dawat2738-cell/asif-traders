@@ -2657,6 +2657,7 @@ let reviewStars = 5;
             document.querySelectorAll('.admin-sub-view').forEach(v => v.style.display = 'none');
             const target = document.getElementById(viewId);
             if (target) target.style.display = 'block';
+            if (viewId === 'view-sub-products') renderAdminList();
             if (viewId === 'view-sub-reviews') renderAdminReviews();
             if (viewId === 'view-sub-orders') renderAdminOrders();
         }
