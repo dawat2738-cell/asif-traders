@@ -1473,6 +1473,23 @@
             <button class="sheet-btn red" style="width:100%; margin-top:8px;" onclick="closeAdmin()">ایڈمن بند کریں</button>
         </div>
 
+        <!-- Firebase آن لائن سائن ان (ایڈمن تبدیلیاں تمام کسٹمرز کو خودکار بھیجنے کے لیے) -->
+        <div class="modal-sheet" id="fb-signin-box" style="display:none;">
+            <h3><i class="fa-solid fa-cloud-arrow-up"></i> آن لائن سائن ان</h3>
+            <p style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">آپ کی تبدیلیاں تمام کسٹمرز کو خودکار نظر آئیں — اس کے لیے ایک بار سائن ان کریں۔ پاس ورڈ صرف آپ کو معلوم ہے، یہ کہیں محفوظ نہیں ہوتا۔</p>
+            <div class="input-row">
+                <label>ای میل:</label>
+                <input type="email" id="fb-signin-email" class="en-font" value="dawat2626@gmail.com">
+            </div>
+            <div class="input-row">
+                <label>ایڈمن پاس ورڈ:</label>
+                <input type="password" id="fb-signin-pass" class="en-font" placeholder="پاس ورڈ لکھیں">
+            </div>
+            <p id="fb-signin-error" style="font-size:11px; color:#f87171; min-height:14px;"></p>
+            <button class="sheet-btn emerald" style="width:100%;" onclick="fbSignIn()">سائن ان کریں</button>
+            <button class="sheet-btn red" style="width:100%; margin-top:8px;" onclick="fbHideSignIn()">بعد میں کریں</button>
+        </div>
+
         <!-- پاسورڈ ری سیٹ سکرین (اگر پن بھول جائیں) -->
         <div class="modal-sheet" id="admin-reset-box" style="display:none;">
             <h3><i class="fa-solid fa-key"></i> پن کوڈ ری سیٹ مینیجر</h3>
@@ -1505,6 +1522,8 @@
                 </div>
                 
                 <p style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">جس چیز کو تبدیل یا اپ ڈیٹ کرنا چاہتے ہیں، اس پر کلک کریں:</p>
+
+                <div id="fb-status-line" style="font-size:11px; background:rgba(59,130,246,0.12); border:1px solid #3b82f6; border-radius:8px; padding:8px 10px; margin-bottom:10px; line-height:1.6;">آن لائن حالت چیک ہو رہی ہے...</div>
 
                 <div class="admin-hub-grid">
                     <div class="admin-hub-card" onclick="openAdminSubView('view-sub-products')">
@@ -1844,6 +1863,10 @@
     <!-- بڑی تصویر ویو (Lightbox) -->
     <div id="lightbox" onclick="closeLightbox()" style="display: none;"><img id="lightbox-img" style="max-width:92%; max-height:80vh; border-radius:10px; border:2px solid var(--gold);"></div>
 
+        <!-- Firebase SDK (compat) — آٹو اپڈیٹ کے لیے -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
         // تمام 11 کیٹیگریز کا مستقل کیٹلاگ
         const INITIAL_CATALOG = [
@@ -1875,6 +1898,265 @@ let orders = [];
 let myOrders = [];
 let totalOrders = 0;
 let reviewStars = 5;
+        // ===== Firebase آٹو اپڈیٹ — ایڈمن تبدیلیاں تمام کسٹمرز کو خودکار نظر آئیں =====
+        // اصول: آن لائن ہو تو RTDB (store) ہی اصل ڈیٹا ہے۔ BAKED_STORE_DATA صرف آف لائن فال بیک ہے۔
+        // سیلر کے فون کی unsynced تبدیلیاں (مثلاً نئی تصاویر) کبھی بھی remote ڈیٹا سے overwrite نہیں ہوں گی۔
+        var FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDgsLoOaz8cO_DIJ6LQ6Zm8wLBwrQ_APog",
+            authDomain: "asif-traders-705c7.firebaseapp.com",
+            databaseURL: "https://asif-traders-705c7-default-rtdb.firebaseio.com",
+            projectId: "asif-traders-705c7",
+            storageBucket: "asif-traders-705c7.firebasestorage.app",
+            messagingSenderId: "107488951575",
+            appId: "1:107488951575:web:910c3bacb4106989f4cb52"
+        };
+        var FB_SELLER_EMAIL = "dawat2626@gmail.com";
+        var fbApp = null, fbAuth = null, fbDb = null, fbReady = false;
+        var fbVersionListenerOn = false;
+        var fbOwnWriteVersion = 0;
+
+        function fbIsSignedIn() { return !!(fbAuth && fbAuth.currentUser); }
+
+        function fbInit() {
+            try {
+                if (typeof firebase === 'undefined' || !firebase.apps) { fbReady = false; fbUpdateStatusLine(); return; }
+                if (!firebase.apps.length) { fbApp = firebase.initializeApp(FIREBASE_CONFIG); }
+                else { fbApp = firebase.app(); }
+                fbAuth = firebase.auth();
+                fbDb = firebase.database();
+                try { fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); } catch (e) {}
+                fbReady = true;
+                fbAuth.onAuthStateChanged(function (user) {
+                    fbUpdateStatusLine();
+                    if (user) { fbAfterSignIn(); }
+                });
+                fbCheckAndSync();
+            } catch (e) { fbReady = false; fbUpdateStatusLine(); }
+        }
+
+        // کیا اس فون پر ایسی Admin تبدیلیاں ہیں جو ابھی آن لائن نہیں گئیں؟
+        function fbLocalHasUnsyncedChanges() {
+            if (localStorage.getItem('asif_fb_dirty') === '1') return true;
+            if (localStorage.getItem('asif_fb_version')) return false; // پہلے sync ہو چکا — local = remote
+            try {
+                if (!window.BAKED_STORE_DATA) return false;
+                return fbLocalSnapshotString() !== fbBakedSnapshotString();
+            } catch (e) { return false; }
+        }
+
+        function fbLocalSnapshotString() {
+            var d = gatherAllStoreData();
+            delete d.baked_ts; delete d.version;
+            return JSON.stringify(d);
+        }
+
+        function fbBakedSnapshotString() {
+            var b = window.BAKED_STORE_DATA || {};
+            var d = { catalog: b.catalog, pin: b.pin, shop_name: b.shop_name, shop_addr: b.shop_addr, shop_logo: b.shop_logo, web_link: b.web_link, ticker: b.ticker, pol_lahore: b.pol_lahore, pol_out: b.pol_out, pay_jazz: b.pay_jazz, pay_easy: b.pay_easy, pay_upaisa: b.pay_upaisa, pay_sada: b.pay_sada, social_wa: b.social_wa, social_yt: b.social_yt, social_fb: b.social_fb, social_tt: b.social_tt, social_ig: b.social_ig, reviews: b.reviews, orders: b.orders, total_orders: b.total_orders };
+            return JSON.stringify(d);
+        }
+
+        // لوڈ پر: پہلے صرف version پڑھیں (چھوٹا) — version بدلا ہو تو ہی پورا ڈیٹا ڈاؤن لوڈ کریں۔
+        function fbCheckAndSync() {
+            if (!fbReady) return;
+            fbDb.ref('store/version').get().then(function (snap) {
+                var remoteVersion = snap.val();
+                if (!remoteVersion) {
+                    // version نہیں — ہو سکتا ہے store بغیر version کے seed ہوا ہو؛ ایک بار store چیک کریں
+                    fbDb.ref('store').get().then(function (s2) {
+                        var data = s2.val();
+                        if (data && data.catalog) {
+                            var cached = parseInt(localStorage.getItem('asif_fb_version') || '0', 10) || 0;
+                            if (cached) return;
+                            if (fbLocalHasUnsyncedChanges()) { localStorage.setItem('asif_fb_dirty', '1'); return; }
+                            fbApplyRemoteStore(data, data.version || 1);
+                        }
+                    }).catch(function () {});
+                    return;
+                }
+                var cached = parseInt(localStorage.getItem('asif_fb_version') || '0', 10) || 0;
+                if (remoteVersion <= cached) return; // ہمارے پاس پہلے سے نیا ڈیٹا ہے
+                if (fbLocalHasUnsyncedChanges()) { localStorage.setItem('asif_fb_dirty', '1'); return; } // local edits کو overwrite نہ کریں
+                fbFetchAndApply(remoteVersion);
+            }).catch(function () { /* آف لائن — baked/local فال بیک ہی کام کرے گا */ });
+            if (!fbVersionListenerOn) {
+                fbVersionListenerOn = true;
+                fbDb.ref('store/version').on('value', function (snap) {
+                    var v = snap.val();
+                    if (!v) return;
+                    if (v === fbOwnWriteVersion) return; // اپنی ہی save ہے
+                    var cached = parseInt(localStorage.getItem('asif_fb_version') || '0', 10) || 0;
+                    if (v <= cached) return;
+                    if (fbLocalHasUnsyncedChanges()) { localStorage.setItem('asif_fb_dirty', '1'); return; }
+                    fbFetchAndApply(v);
+                });
+            }
+        }
+
+        function fbFetchAndApply(version) {
+            fbDb.ref('store').get().then(function (snap) {
+                var data = snap.val();
+                if (!data || !data.catalog) return;
+                fbApplyRemoteStore(data, version);
+            }).catch(function () {});
+        }
+
+        // Remote ڈیٹا localStorage میں لکھیں اور صفحہ دوبارہ render کریں
+        function fbApplyRemoteStore(data, version) {
+            try {
+                if (data.catalog) localStorage.setItem('asif_catalog', JSON.stringify(data.catalog));
+                if (data.pin) localStorage.setItem('asif_admin_pin', data.pin);
+                if (data.shop_name) localStorage.setItem('asif_shop_name', data.shop_name);
+                if (data.shop_addr) localStorage.setItem('asif_shop_addr', data.shop_addr);
+                if (data.shop_logo) localStorage.setItem('asif_shop_logo', data.shop_logo);
+                if (data.web_link) localStorage.setItem('asif_web_link', data.web_link);
+                if (data.ticker) localStorage.setItem('asif_ticker_text', data.ticker);
+                if (data.pol_lahore) localStorage.setItem('asif_pol_lahore', data.pol_lahore);
+                if (data.pol_out) localStorage.setItem('asif_pol_outstation', data.pol_out);
+                if (data.pay_jazz) localStorage.setItem('asif_pay_jazz', data.pay_jazz);
+                if (data.pay_easy) localStorage.setItem('asif_pay_easy', data.pay_easy);
+                if (data.pay_upaisa) localStorage.setItem('asif_pay_upaisa', data.pay_upaisa);
+                if (data.pay_sada) localStorage.setItem('asif_pay_sada', data.pay_sada);
+                if (data.social_wa) localStorage.setItem('asif_social_wa', data.social_wa);
+                if (data.social_yt) localStorage.setItem('asif_social_yt', data.social_yt);
+                if (data.social_fb) localStorage.setItem('asif_social_fb', data.social_fb);
+                if (data.social_tt) localStorage.setItem('asif_social_tt', data.social_tt);
+                if (data.social_ig) localStorage.setItem('asif_social_ig', data.social_ig);
+                if (data.reviews) localStorage.setItem('asif_reviews', JSON.stringify(data.reviews));
+                if (data.orders) localStorage.setItem('asif_orders', JSON.stringify(data.orders));
+                if (typeof data.total_orders === 'number') localStorage.setItem('asif_total_orders', String(data.total_orders));
+                localStorage.setItem('asif_fb_version', String(version || data.version || Date.now()));
+                localStorage.removeItem('asif_fb_dirty');
+                loadPersistentData();
+                renderCatalog(catalog);
+                renderReviews();
+                updateStatsBar();
+                updateCartUI();
+            } catch (e) {}
+        }
+
+        // پورا store RTDB پر لکھیں (Admin save کے بعد)
+        function fbSyncStore(onDone) {
+            if (!fbReady) { if (onDone) onDone(false); return; }
+            if (!fbIsSignedIn()) { fbShowSignIn(); if (onDone) onDone(false); return; }
+            var data = gatherAllStoreData();
+            data.version = Date.now();
+            fbOwnWriteVersion = data.version;
+            fbDb.ref('store').set(data).then(function () {
+                localStorage.setItem('asif_fb_version', String(data.version));
+                localStorage.removeItem('asif_fb_dirty');
+                fbUpdateStatusLine();
+                if (onDone) onDone(true);
+            }).catch(function () {
+                localStorage.setItem('asif_fb_dirty', '1');
+                if (onDone) onDone(false);
+            });
+        }
+
+        // Admin save کے بعد کال کریں — صحیح پیغام خود دکھاتا ہے
+        function fbSyncAfterSave(msg) {
+            if (!fbReady) {
+                localStorage.setItem('asif_fb_dirty', '1');
+                alert(msg + '\n(اس فون پر محفوظ ہو گیا ہے۔ انٹرنیٹ دستیاب ہونے پر ایڈمن میں سائن ان کریں تاکہ تمام کسٹمرز کو نظر آئے۔)');
+                return;
+            }
+            if (!fbIsSignedIn()) {
+                localStorage.setItem('asif_fb_dirty', '1');
+                fbShowSignIn();
+                alert(msg + '\n(اس فون پر محفوظ ہو گیا ہے — تمام کسٹمرز تک پہنچانے کے لیے ایڈمن سائن ان کریں۔)');
+                return;
+            }
+            fbSyncStore(function (ok) {
+                if (ok) { alert(msg + '\nتمام کسٹمرز کو خودکار نظر آ جائے گا!'); }
+                else { alert(msg + '\n(اس فون پر محفوظ ہے — آن لائن بھیجنے میں خرابی ہوئی، دوبارہ کوشش کریں۔)'); }
+            });
+        }
+
+        // خاموش sync (مثلاً آرڈر اسٹیٹس ڈراپ ڈاؤن) — ناکامی پر صرف dirty نشان لگائیں، پاپ اپ نہیں
+        function fbSyncAfterSaveSilent() {
+            if (!fbReady || !fbIsSignedIn()) { localStorage.setItem('asif_fb_dirty', '1'); return; }
+            fbSyncStore(function (ok) {});
+        }
+
+        function fbShowSignIn() {
+            var box = document.getElementById('fb-signin-box');
+            if (!box) return;
+            var dash = document.getElementById('admin-dash-box');
+            var auth = document.getElementById('admin-auth-box');
+            var reset = document.getElementById('admin-reset-box');
+            if (dash) dash.style.display = 'none';
+            if (auth) auth.style.display = 'none';
+            if (reset) reset.style.display = 'none';
+            box.style.display = 'block';
+            var em = document.getElementById('fb-signin-email');
+            if (em && !em.value) em.value = FB_SELLER_EMAIL;
+            fbUpdateStatusLine();
+        }
+
+        function fbHideSignIn() {
+            var box = document.getElementById('fb-signin-box');
+            if (box) box.style.display = 'none';
+            var dash = document.getElementById('admin-dash-box');
+            if (dash) dash.style.display = 'block';
+            backToAdminHub();
+        }
+
+        function fbSignIn() {
+            var email = (document.getElementById('fb-signin-email').value || '').trim() || FB_SELLER_EMAIL;
+            var pass = document.getElementById('fb-signin-pass').value || '';
+            var errEl = document.getElementById('fb-signin-error');
+            if (!pass) { if (errEl) errEl.innerText = 'پاس ورڈ لکھیں!'; return; }
+            if (!fbReady) { if (errEl) errEl.innerText = 'انٹرنیٹ دستیاب نہیں — دوبارہ کوشش کریں۔'; return; }
+            fbAuth.signInWithEmailAndPassword(email, pass).then(function () {
+                if (errEl) errEl.innerText = '';
+                document.getElementById('fb-signin-pass').value = '';
+                fbHideSignIn();
+                fbAfterSignIn();
+            }).catch(function (err) {
+                if (errEl) errEl.innerText = 'سائن ان نہیں ہو سکا — ای میل یا پاس ورڈ چیک کریں۔' + (err && err.code ? ' (' + err.code + ')' : '');
+            });
+        }
+
+        function fbSignOut() {
+            if (fbAuth) fbAuth.signOut();
+            fbUpdateStatusLine();
+        }
+
+        // سائن ان کے بعد: RTDB خالی ہو تو اس فون کا ڈیٹا upload کریں؛ unsynced edits ہوں تو local جیتے؛ ورنہ نیا remote لیں
+        function fbAfterSignIn() {
+            if (!fbReady || !fbIsSignedIn()) return;
+            fbUpdateStatusLine();
+            fbDb.ref('store').get().then(function (snap) {
+                var remote = snap.val();
+                if (!remote || !remote.catalog) {
+                    fbSyncStore(function (ok) { fbUpdateStatusLine(); });
+                    return;
+                }
+                var remoteVersion = remote.version || 0;
+                var cached = parseInt(localStorage.getItem('asif_fb_version') || '0', 10) || 0;
+                if (fbLocalHasUnsyncedChanges()) {
+                    fbSyncStore(function (ok) { fbUpdateStatusLine(); });
+                    return;
+                }
+                if (remoteVersion > cached) { fbApplyRemoteStore(remote, remoteVersion); }
+            }).catch(function () {});
+        }
+
+        function fbUpdateStatusLine() {
+            var el = document.getElementById('fb-status-line');
+            if (!el) return;
+            if (!fbReady) {
+                el.innerHTML = '⚠️ آن لائن اپڈیٹ بند ہے (انٹرنیٹ یا Firebase دستیاب نہیں) — تبدیلیاں صرف اس فون پر محفوظ ہوں گی۔';
+                return;
+            }
+            if (fbIsSignedIn()) {
+                var dirty = localStorage.getItem('asif_fb_dirty') === '1';
+                el.innerHTML = '✅ آن لائن سائن ان ہے — تبدیلیاں تمام کسٹمرز کو خودکار نظر آئیں گی۔' + (dirty ? ' <b>(کچھ تبدیلیاں ابھی آن لائن نہیں گئیں — ایک بار کوئی چیز سیو کریں۔)</b>' : '') + ' <span style="color:#38bdf8; cursor:pointer; text-decoration:underline;" onclick="fbSignOut()">سائن آؤٹ</span>';
+            } else {
+                el.innerHTML = '🔐 آن لائن کرنے کے لیے سائن ان کریں — ورنہ تبدیلیاں صرف اس فون پر رہیں گی۔ <span style="color:#38bdf8; cursor:pointer; text-decoration:underline; font-weight:bold;" onclick="fbShowSignIn()">ابھی سائن ان کریں</span>';
+            }
+        }
+
 
         // تاریخچہ اسٹیٹ برائے موبائل بیک بٹن (PREVENTS CLOSING APP ON MOBILE BACK)
         window.addEventListener('popstate', function(event) {
@@ -1941,8 +2223,8 @@ let reviewStars = 5;
                 const localBakedTs = parseInt(localStorage.getItem('asif_baked_ts') || '0', 10);
                 const fileBakedTs = parseInt(b.baked_ts || '1', 10);
 
-                // اگر کسٹمر کا فون نیا ہے یا دکاندار نے نیا اپ ڈیٹ جاری کیا ہے تو سارا ڈیٹا خودکار اپ ڈیٹ کریں
-                if (!localStorage.getItem('asif_catalog') || fileBakedTs > localBakedTs) {
+                // صرف نئے فون پر baked ڈیٹا سے seed کریں — RTDB اب اصل ذریعہ ہے؛ baked سے کبھی local تبدیلیاں overwrite نہ ہوں
+                if (!localStorage.getItem('asif_catalog')) {
                     if (b.catalog) localStorage.setItem('asif_catalog', JSON.stringify(b.catalog));
                     if (b.pin) localStorage.setItem('asif_admin_pin', b.pin);
                     if (b.shop_name) localStorage.setItem('asif_shop_name', b.shop_name);
@@ -2362,6 +2644,7 @@ let reviewStars = 5;
                 document.getElementById('admin-dash-box').style.display = 'block';
                 backToAdminHub();
                 renderAdminList();
+                fbUpdateStatusLine();
             } else { 
                 alert('غلط پن کوڈ! اگر بھول گئے ہیں تو نیچے "پاسورڈ بھول گئے" پر کلک کریں۔'); 
             }
@@ -2381,6 +2664,7 @@ let reviewStars = 5;
         function backToAdminHub() {
             document.querySelectorAll('.admin-sub-view').forEach(v => v.style.display = 'none');
             document.getElementById('admin-main-hub-view').style.display = 'block';
+            fbUpdateStatusLine();
         }
 
         function toggleForgotPin(show) {
@@ -2395,7 +2679,7 @@ let reviewStars = 5;
                 if (newPin.length >= 4) {
                     currentAdminPin = newPin;
                     localStorage.setItem('asif_admin_pin', newPin);
-                    alert('مبارک ہو! آپ کا نیا پن کوڈ کامیابی کے ساتھ محفوظ ہو گیا ہے: ' + newPin);
+                    fbSyncAfterSave('مبارک ہو! آپ کا نیا پن کوڈ محفوظ ہو گیا ہے: ' + newPin);
                     toggleForgotPin(false);
                     document.getElementById('admin-pin-input').value = newPin;
                 } else {
@@ -2435,7 +2719,7 @@ let reviewStars = 5;
             document.getElementById('admin-curr-pin-input').value = '';
             document.getElementById('admin-new-pin-input').value = '';
             document.getElementById('admin-confirm-pin-input').value = '';
-            alert('مبارک ہو! آپ کا نیا سیکیورٹی پن کوڈ کامیابی سے تبدیل اور محفوظ ہو گیا ہے: ' + newP + '\nاب ریفریش کرنے پر بھی یہی پن کام کرے گا۔');
+            fbSyncAfterSave('مبارک ہو! آپ کا نیا سیکیورٹی پن کوڈ تبدیل اور محفوظ ہو گیا ہے: ' + newP);
             backToAdminHub();
         }
 
@@ -2520,7 +2804,7 @@ let reviewStars = 5;
                         const prev = document.getElementById('edit-logo-preview');
                         if (prev) { prev.src = compressedUri; prev.style.display = 'block'; }
                         localStorage.setItem('asif_shop_logo', compressedUri);
-                        alert('لوگو کامیابی سے کمپریس ہو کر میموری میں مستقل محفوظ ہو گیا ہے! اب ریفریش کرنے پر بھی غائب نہیں ہوگا۔');
+                        fbSyncAfterSave('لوگو محفوظ ہو گیا ہے!');
                     } catch(err) {
                         alert('براؤزر میموری کی خرابی: براہِ کرم کیشے کلیئر کریں۔');
                     }
@@ -2551,7 +2835,7 @@ let reviewStars = 5;
             closeProductEditModal();
             renderAdminList();
             renderCatalog(catalog);
-            alert('پراڈکٹ محفوظ ہو گئی اور کسٹمرز کے لیے فوری لائیو ہو گئی!');
+            fbSyncAfterSave('پراڈکٹ محفوظ ہو گئی ہے!');
         }
 
         function deleteProduct(id) {
@@ -2560,6 +2844,7 @@ let reviewStars = 5;
                 localStorage.setItem('asif_catalog', JSON.stringify(catalog));
                 renderAdminList();
                 renderCatalog(catalog);
+                fbSyncAfterSave('پراڈکٹ ڈیلیٹ ہو گئی ہے!');
             }
         }
 
@@ -2568,7 +2853,7 @@ let reviewStars = 5;
             if (t) {
                 document.getElementById('view-ticker-text').innerText = t;
                 localStorage.setItem('asif_ticker_text', t);
-                alert('الرٹ اور آفر پٹی محفوظ ہو گئی اور ایپ پر چلنا شروع ہو گئی!');
+                fbSyncAfterSave('الرٹ اور آفر پٹی محفوظ ہو گئی ہے!');
                 backToAdminHub();
             }
         }
@@ -2578,7 +2863,7 @@ let reviewStars = 5;
             const o = document.getElementById('edit-pol-outstation').value.trim();
             if (l) { document.getElementById('view-policy-lahore').innerHTML = l; localStorage.setItem('asif_pol_lahore', l); }
             if (o) { document.getElementById('view-policy-outstation').innerHTML = o; localStorage.setItem('asif_pol_outstation', o); }
-            alert('تمام پالیسیز مستقل محفوظ ہو گئیں!');
+            fbSyncAfterSave('تمام پالیسیز محفوظ ہو گئیں!');
             backToAdminHub();
         }
 
@@ -2591,7 +2876,7 @@ let reviewStars = 5;
             if (e) { document.getElementById('view-easy-no').innerText = e; localStorage.setItem('asif_pay_easy', e); }
             if (u) { document.getElementById('view-upaisa-no').innerText = u; localStorage.setItem('asif_pay_upaisa', u); }
             if (s) { document.getElementById('view-sada-no').innerText = s; localStorage.setItem('asif_pay_sada', s); }
-            alert('پیمنٹ اکاؤنٹس مستقل محفوظ ہو گئے!');
+            fbSyncAfterSave('پیمنٹ اکاؤنٹس محفوظ ہو گئے!');
             backToAdminHub();
         }
 
@@ -2615,7 +2900,7 @@ let reviewStars = 5;
             document.getElementById('link-tt').href = tt;
             document.getElementById('link-ig').href = ig;
 
-            alert('تمام سوشل میڈیا لنکس کامیابی سے اپ ڈیٹ اور محفوظ ہو گئے!');
+            fbSyncAfterSave('تمام سوشل میڈیا لنکس اپ ڈیٹ اور محفوظ ہو گئے!');
             backToAdminHub();
         }
 
@@ -2626,7 +2911,7 @@ let reviewStars = 5;
             if (a) { document.getElementById('view-shop-address').innerText = a; localStorage.setItem('asif_shop_addr', a); }
             const w = document.getElementById('edit-web-link') ? document.getElementById('edit-web-link').value.trim() : '';
             if (w) { localStorage.setItem('asif_web_link', w); }
-            alert('دکان کی معلومات مستقل محفوظ ہو گئیں!');
+            fbSyncAfterSave('دکان کی معلومات محفوظ ہو گئیں!');
             backToAdminHub();
         }
 
@@ -2634,6 +2919,7 @@ let reviewStars = 5;
         function gatherAllStoreData() {
             return {
                 baked_ts: Date.now(),
+                version: (parseInt(localStorage.getItem('asif_fb_version') || '0', 10) || Date.now()),
                 catalog: catalog,
                 pin: currentAdminPin,
                 shop_name: localStorage.getItem('asif_shop_name') || 'آصف ٹریڈرز',
@@ -2756,7 +3042,9 @@ let reviewStars = 5;
                 if (data.social_fb) localStorage.setItem('asif_social_fb', data.social_fb);
                 if (data.social_tt) localStorage.setItem('asif_social_tt', data.social_tt);
                 if (data.social_ig) localStorage.setItem('asif_social_ig', data.social_ig);
-                alert('ڈیٹا کامیابی کے ساتھ ری اسٹور ہو گیا ہے!');
+                localStorage.setItem('asif_fb_dirty', '1');
+                localStorage.removeItem('asif_fb_version');
+                alert('ڈیٹا کامیابی کے ساتھ ری اسٹور ہو گیا ہے!\nآن لائن کرنے کے لیے ایڈمن میں سائن ان کریں۔');
                 location.reload();
             } catch(e) {
                 alert('بیک اپ کوڈ درست نہیں ہے!');
@@ -2894,7 +3182,7 @@ let reviewStars = 5;
             document.getElementById('edit-review-idx').value = '-1';
             renderAdminReviews();
             renderReviews();
-            alert('ریویو محفوظ ہو گیا ہے!');
+            fbSyncAfterSave('ریویو محفوظ ہو گیا ہے!');
         }
 
         function editReview(idx) {
@@ -2912,6 +3200,7 @@ let reviewStars = 5;
             localStorage.setItem('asif_reviews', JSON.stringify(reviews));
             renderAdminReviews();
             renderReviews();
+            fbSyncAfterSave('ریویو ڈیلیٹ ہو گیا ہے!');
         }
 
         // ===== ایڈمن: آرڈرز =====
@@ -2963,7 +3252,7 @@ let reviewStars = 5;
             document.getElementById('inp-order-total').value = '';
             document.getElementById('edit-order-idx').value = '-1';
             renderAdminOrders();
-            alert('آرڈر محفوظ ہو گیا ہے!');
+            fbSyncAfterSave('آرڈر محفوظ ہو گیا ہے!');
         }
 
         function changeOrderStatus(idx, newStatus) {
@@ -2978,6 +3267,7 @@ let reviewStars = 5;
             }
             localStorage.setItem('asif_orders', JSON.stringify(orders));
             renderAdminOrders();
+            fbSyncAfterSaveSilent();
         }
 
         function editOrder(idx) {
@@ -2996,6 +3286,7 @@ let reviewStars = 5;
             orders.splice(idx, 1);
             localStorage.setItem('asif_orders', JSON.stringify(orders));
             renderAdminOrders();
+            fbSyncAfterSave('آرڈر ڈیلیٹ ہو گیا ہے!');
         }
 
         function saveTotalOrders() {
@@ -3003,7 +3294,7 @@ let reviewStars = 5;
             totalOrders = (isNaN(v) || v < 0) ? 0 : v;
             localStorage.setItem('asif_total_orders', String(totalOrders));
             updateStatsBar();
-            alert('کل مکمل آرڈرز محفوظ ہو گئے: ' + totalOrders);
+            fbSyncAfterSave('کل مکمل آرڈرز محفوظ ہو گئے: ' + totalOrders);
         }
 
         window.onload = function() {
@@ -3012,6 +3303,7 @@ let reviewStars = 5;
             updateCartUI();
             renderReviews();
             updateStatsBar();
+            fbInit();
 
             new QRCode(document.getElementById("app-qrcode-box"), {
                 text: getShareURL(), width: 140, height: 140
