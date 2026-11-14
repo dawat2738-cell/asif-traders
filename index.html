@@ -1795,6 +1795,11 @@
                         <button class="sheet-btn gold" style="flex:none;" onclick="saveTotalOrders()">محفوظ کریں</button>
                     </div>
                 </div>
+                <div style="border:1px solid var(--gold); border-radius:8px; padding:8px; margin-bottom:10px;">
+                    <h4 style="font-size:12px; color:var(--gold); margin-bottom:6px;">⏳ پیمنٹ کا انتظار (نئے آرڈرز)</h4>
+                    <div id="admin-pending-list" style="max-height:220px; overflow-y:auto;"></div>
+                    <button class="sheet-btn blue" style="width:100%; margin-top:6px;" onclick="loadPendingOrders()">↻ نئے آرڈر چیک کریں</button>
+                </div>
                 <div id="admin-orders-list" style="max-height:260px; overflow-y:auto; margin-bottom:10px;"></div>
                 <div style="border-top:1px solid var(--border); padding-top:10px;">
                     <h4 style="font-size:12px; color:var(--gold); margin-bottom:8px;">نیا آرڈر شامل کریں</h4>
@@ -1803,6 +1808,12 @@
                     <div class="input-row"><label>کسٹمر کا نام:</label><input type="text" id="inp-order-name" placeholder="نام لکھیں"></div>
                     <div class="input-row"><label>اشیاء (ہر لائن: نام | تعداد | قیمت):</label><textarea id="inp-order-items" rows="3" placeholder="مثال: Premium Max | 1 | 5500"></textarea></div>
                     <div class="input-row"><label>کل رقم (Rs):</label><input type="number" id="inp-order-total" min="0" placeholder="0"></div>
+                    <div class="input-row"><label>ڈیلیوری:</label>
+                        <select id="inp-order-delivery">
+                            <option value="lahore">لاہور (2-3 گھنٹے)</option>
+                            <option value="outstation">لاہور سے باہر (2-3 دن)</option>
+                        </select>
+                    </div>
                     <div class="input-row"><label>حالت:</label>
                         <select id="inp-order-status">
                             <option value="موصول ہوا">موصول ہوا</option>
@@ -2263,6 +2274,7 @@ let reviewStars = 5;
             try { reviews = JSON.parse(localStorage.getItem('asif_reviews') || '[]'); } catch(e) { reviews = []; }
             try { orders = JSON.parse(localStorage.getItem('asif_orders') || '[]'); } catch(e) { orders = []; }
             try { myOrders = JSON.parse(localStorage.getItem('asif_my_orders') || '[]'); } catch(e) { myOrders = []; }
+            refreshOrderStatuses();
             totalOrders = parseInt(localStorage.getItem('asif_total_orders') || '0', 10) || 0;
 
             // پن کوڈ
@@ -2508,6 +2520,13 @@ let reviewStars = 5;
                 waUrl += '&text=' + encodeURIComponent(msg);
             }
                         saveMyOrder();
+            // آرڈر سیلر کے Admin میں خودکار ظاہر ہو (پینڈنگ لسٹ) — پیمنٹ کنفرم ہونے تک ڈیلیور نہیں ہوگا
+            try {
+                var modeVal = document.getElementById('cust-city-mode').value;
+                var deliveryType = (modeVal === 'lahore_cod') ? 'lahore' : 'outstation';
+                var pendingOrder = { inv: invNo, name: name, phone: phone, mode: cityText, deliveryType: deliveryType, items: cart.map(function(c){ return { name: c.name, qty: c.qty, price: c.price }; }), total: parseInt(String(total).replace(/[^0-9]/g, '') || '0', 10) || 0, status: 'موصول ہوا', date: new Date().toLocaleDateString('en-GB'), confirmed: false };
+                fetch('https://asif-traders-705c7-default-rtdb.firebaseio.com/pendingOrders/' + encodeURIComponent(invNo) + '.json', { method: 'PUT', body: JSON.stringify(pendingOrder) }).catch(function(){});
+            } catch(e) {}
             window.open(waUrl, '_blank');
         }
 
@@ -3106,6 +3125,37 @@ let reviewStars = 5;
 
         // ===== آرڈر ٹریکنگ =====
         const ORDER_STATUSES = ['موصول ہوا', 'تصدیق شدہ', 'روانہ', 'ڈیلیور ہو گیا'];
+        // آٹو ڈیلیوری: روانہ ہونے کے بعد لاہور 3 گھنٹے، لاہور سے باہر 3 دن میں خود ڈیلیور ہو جائے گا
+        const AUTO_DELIVER_MS = { lahore: 3 * 60 * 60 * 1000, outstation: 3 * 24 * 60 * 60 * 1000 };
+        const AUTO_DELIVER_LABEL = { lahore: '2-3 گھنٹے', outstation: '2-3 دن' };
+        function getEffectiveStatus(o) {
+            if (!o) return 'موصول ہوا';
+            if (o.status !== 'روانہ') return o.status;
+            var dispatchedAt = o.dispatchedAt || 0;
+            if (!dispatchedAt) return o.status;
+            var threshold = AUTO_DELIVER_MS[o.deliveryType || 'outstation'] || AUTO_DELIVER_MS.outstation;
+            if (Date.now() - dispatchedAt >= threshold) return 'ڈیلیور ہو گیا';
+            return o.status;
+        }
+        // صرف سیلر کے فون پر (سائن ان ہو تو) وقت گزرنے پر اسٹیٹس خود ڈیلیور کر کے sync کریں
+        function refreshOrderStatuses() {
+            if (!orders || typeof fbIsSignedIn !== 'function' || !fbIsSignedIn()) return false;
+            var changed = false;
+            orders.forEach(function (o) {
+                if (o.status === 'روانہ' && getEffectiveStatus(o) === 'ڈیلیور ہو گیا') {
+                    o.status = 'ڈیلیور ہو گیا';
+                    totalOrders += 1;
+                    changed = true;
+                }
+            });
+            if (changed) {
+                localStorage.setItem('asif_total_orders', String(totalOrders));
+                localStorage.setItem('asif_orders', JSON.stringify(orders));
+                updateStatsBar();
+                fbSyncAfterSaveSilent();
+            }
+            return changed;
+        }
 
         function trackOrder() {
             const invRaw = document.getElementById('track-inv-input').value.trim();
@@ -3119,8 +3169,14 @@ let reviewStars = 5;
                 res.innerHTML = '<p style="color:#fca5a5; font-size:12px; line-height:1.6;">یہ انوائس نمبر نہیں ملا — نمبر دوبارہ چیک کریں یا واٹس ایپ پر رابطہ کریں۔</p>';
                 return;
             }
-            let idx = ORDER_STATUSES.indexOf(found.status);
+            let effStatus = getEffectiveStatus(found);
+            let idx = ORDER_STATUSES.indexOf(effStatus);
             const cur = idx < 0 ? 0 : idx;
+            let estHtml = '';
+            if (effStatus === 'روانہ') {
+                var estLabel = AUTO_DELIVER_LABEL[found.deliveryType || 'outstation'] || AUTO_DELIVER_LABEL.outstation;
+                estHtml = '<div style="color:var(--gold); font-size:12px; margin-top:6px;">متوقع ڈیلیوری: ' + estLabel + ' میں (اندازاً)</div>';
+            }
             let steps = '<div class="track-steps">';
             ORDER_STATUSES.forEach((st, i) => {
                 let cls = 'track-step';
@@ -3133,7 +3189,7 @@ let reviewStars = 5;
             (found.items || []).forEach(it => {
                 itemsHtml += '<div>' + escapeHtml(it.name) + ' (' + it.qty + 'x) — Rs. ' + (it.price * it.qty).toLocaleString('en-US') + '</div>';
             });
-            res.innerHTML = '<div class="track-info"><b>انوائس نمبر:</b> <span class="en-font">' + escapeHtml(found.inv) + '</span><br><b>کسٹمر:</b> ' + escapeHtml(found.name) + '<br><b>تاریخ:</b> ' + escapeHtml(found.date || '') + '<br>' + itemsHtml + '<b>کل رقم:</b> Rs. ' + (found.total || 0).toLocaleString('en-US') + '<br><b>حالت:</b> ' + escapeHtml(found.status) + '</div>' + steps;
+            res.innerHTML = '<div class="track-info"><b>انوائس نمبر:</b> <span class="en-font">' + escapeHtml(found.inv) + '</span><br><b>کسٹمر:</b> ' + escapeHtml(found.name) + '<br><b>تاریخ:</b> ' + escapeHtml(found.date || '') + '<br>' + itemsHtml + '<b>کل رقم:</b> Rs. ' + (found.total || 0).toLocaleString('en-US') + '<br><b>حالت:</b> ' + escapeHtml(effStatus) + '</div>' + estHtml + steps;
         }
 
         function saveMyOrder() {
@@ -3206,9 +3262,51 @@ let reviewStars = 5;
         }
 
         // ===== ایڈمن: آرڈرز =====
+        // پینڈنگ آرڈرز: کسٹمر کے آرڈر سیلر کے Admin میں خودکار آئیں (پیمنٹ کنفرم ہونے تک ڈیلیور نہیں ہوں گے)
+        var pendingOrdersCache = {};
+        function loadPendingOrders() {
+            var list = document.getElementById('admin-pending-list');
+            if (!list) return;
+            fetch('https://asif-traders-705c7-default-rtdb.firebaseio.com/pendingOrders.json').then(function(r){ return r.json(); }).then(function(data){
+                pendingOrdersCache = data || {};
+                renderPendingOrders();
+            }).catch(function(){ list.innerHTML = '<p style="font-size:11px; color:var(--text-muted);">نئے آرڈر لوڈ نہیں ہو سکے۔</p>'; });
+        }
+        function renderPendingOrders() {
+            var list = document.getElementById('admin-pending-list');
+            if (!list) return;
+            var keys = Object.keys(pendingOrdersCache || {});
+            if (keys.length === 0) { list.innerHTML = '<p style="font-size:11px; color:var(--text-muted);">کوئی نیا آرڈر نہیں ہے۔</p>'; return; }
+            list.innerHTML = '';
+            keys.forEach(function(inv){
+                var o = pendingOrdersCache[inv];
+                if (!o) return;
+                var itemsTxt = (o.items || []).map(function(it){ return escapeHtml(it.name) + ' (' + it.qty + 'x)'; }).join(', ');
+                var div = document.createElement('div');
+                div.className = 'admin-order-item';
+                div.innerHTML = '<div style="display:flex; justify-content:space-between;"><b class="en-font">' + escapeHtml(o.inv) + '</b><span>Rs. ' + (o.total || 0).toLocaleString('en-US') + '</span></div><div>' + escapeHtml(o.name) + ' — ' + escapeHtml(o.phone || '') + ' — ' + escapeHtml(o.date || '') + '</div><div style="color:var(--text-muted);">' + itemsTxt + '</div><div style="color:var(--text-muted);">ڈیلیوری: ' + (o.deliveryType === 'lahore' ? 'لاہور' : 'لاہور سے باہر') + '</div><button class="sheet-btn emerald" style="width:100%; margin-top:6px;" onclick="confirmPendingOrder(\'' + String(o.inv).replace(/'/g, '') + '\')">✓ پیمنٹ کنفرم کریں (آرڈر منظور کریں)</button>';
+                list.appendChild(div);
+            });
+        }
+        function confirmPendingOrder(inv) {
+            var o = pendingOrdersCache[inv];
+            if (!o) return;
+            if (!confirm('پیمنٹ مل گئی ہے؟ یہ آرڈر منظور کر کے "تصدیق شدہ" کر دیا جائے گا۔')) return;
+            var exists = orders.some(function(x){ return String(x.inv).toUpperCase() === String(inv).toUpperCase(); });
+            if (!exists) {
+                orders.push({ inv: o.inv, name: o.name, items: o.items || [], total: o.total || 0, status: 'تصدیق شدہ', date: o.date || new Date().toLocaleDateString('en-GB'), deliveryType: o.deliveryType || 'outstation', dispatchedAt: 0 });
+            }
+            localStorage.setItem('asif_orders', JSON.stringify(orders));
+            renderAdminOrders();
+            fbSyncAfterSave('آرڈر منظور ہو گیا ہے!');
+            fetch('https://asif-traders-705c7-default-rtdb.firebaseio.com/pendingOrders/' + encodeURIComponent(inv) + '.json', { method: 'DELETE' }).then(function(){ delete pendingOrdersCache[inv]; renderPendingOrders(); }).catch(function(){});
+        }
+
         function renderAdminOrders() {
             const list = document.getElementById('admin-orders-list');
             if (!list) return;
+            refreshOrderStatuses();
+            loadPendingOrders();
             document.getElementById('inp-total-orders').value = String(totalOrders || 0);
             document.getElementById('edit-order-idx').value = '-1';
             if (!orders || orders.length === 0) {
@@ -3218,7 +3316,9 @@ let reviewStars = 5;
             list.innerHTML = '';
             orders.forEach((o, idx) => {
                 const itemsTxt = (o.items || []).map(it => escapeHtml(it.name) + ' (' + it.qty + 'x)').join(', ');
-                list.innerHTML += '<div class="admin-order-item"><div style="display:flex; justify-content:space-between;"><b class="en-font">' + escapeHtml(o.inv) + '</b><span>Rs. ' + (o.total || 0).toLocaleString('en-US') + '</span></div><div>' + escapeHtml(o.name) + ' — ' + escapeHtml(o.date || '') + '</div><div style="color:var(--text-muted);">' + itemsTxt + '</div><div style="display:flex; gap:4px; margin-top:6px; align-items:center;"><select onchange="changeOrderStatus(' + idx + ', this.value)" style="flex:1; background:var(--bg-base); border:1px solid var(--border); color:#fff; border-radius:6px; padding:4px; font-size:11px;">' + ORDER_STATUSES.map(st => '<option value="' + st + '"' + (st === o.status ? ' selected' : '') + '>' + st + '</option>').join('') + '</select><button class="sheet-btn blue" style="padding:2px 8px; font-size:10px;" onclick="editOrder(' + idx + ')">ایڈٹ</button><button class="sheet-btn red" style="padding:2px 8px; font-size:10px;" onclick="deleteOrder(' + idx + ')">ڈیلیٹ</button></div></div>';
+                var effStatus = getEffectiveStatus(o);
+                var delLabel = (o.deliveryType === 'lahore') ? 'لاہور' : 'لاہور سے باہر';
+                list.innerHTML += '<div class="admin-order-item"><div style="display:flex; justify-content:space-between;"><b class="en-font">' + escapeHtml(o.inv) + '</b><span>Rs. ' + (o.total || 0).toLocaleString('en-US') + '</span></div><div>' + escapeHtml(o.name) + ' — ' + escapeHtml(o.date || '') + ' — ' + delLabel + '</div><div style="color:var(--text-muted);">' + itemsTxt + '</div><div style="display:flex; gap:4px; margin-top:6px; align-items:center;"><select onchange="changeOrderStatus(' + idx + ', this.value)" style="flex:1; background:var(--bg-base); border:1px solid var(--border); color:#fff; border-radius:6px; padding:4px; font-size:11px;">' + ORDER_STATUSES.map(st => '<option value="' + st + '"' + (st === effStatus ? ' selected' : '') + '>' + st + '</option>').join('') + '</select><button class="sheet-btn blue" style="padding:2px 8px; font-size:10px;" onclick="editOrder(' + idx + ')">ایڈٹ</button><button class="sheet-btn red" style="padding:2px 8px; font-size:10px;" onclick="deleteOrder(' + idx + ')">ڈیلیٹ</button></div></div>';
             });
         }
 
@@ -3229,6 +3329,7 @@ let reviewStars = 5;
             const itemsRaw = document.getElementById('inp-order-items').value.trim();
             const total = parseInt(document.getElementById('inp-order-total').value, 10) || 0;
             const status = document.getElementById('inp-order-status').value;
+            const deliveryType = document.getElementById('inp-order-delivery') ? document.getElementById('inp-order-delivery').value : 'outstation';
             if (!inv) { alert('انوائس نمبر لکھیں!'); return; }
             if (!name) { alert('کسٹمر کا نام لکھیں!'); return; }
             const items = [];
@@ -3241,10 +3342,11 @@ let reviewStars = 5;
             const date = new Date().toLocaleDateString('en-GB');
             if (idx >= 0 && orders[idx]) {
                 const prevStatus = orders[idx].status;
-                orders[idx] = { inv: inv, name: name, items: items, total: total, status: status, date: orders[idx].date || date };
+                const prevDispatchedAt = orders[idx].dispatchedAt || 0;
+                orders[idx] = { inv: inv, name: name, items: items, total: total, status: status, date: orders[idx].date || date, deliveryType: deliveryType, dispatchedAt: (status === 'روانہ' && !prevDispatchedAt) ? Date.now() : prevDispatchedAt };
                 if (status === 'ڈیلیور ہو گیا' && prevStatus !== 'ڈیلیور ہو گیا') { totalOrders += 1; localStorage.setItem('asif_total_orders', String(totalOrders)); updateStatsBar(); }
             } else {
-                orders.push({ inv: inv, name: name, items: items, total: total, status: status, date: date });
+                orders.push({ inv: inv, name: name, items: items, total: total, status: status, date: date, deliveryType: deliveryType, dispatchedAt: (status === 'روانہ') ? Date.now() : 0 });
                 if (status === 'ڈیلیور ہو گیا') { totalOrders += 1; localStorage.setItem('asif_total_orders', String(totalOrders)); updateStatsBar(); }
             }
             localStorage.setItem('asif_orders', JSON.stringify(orders));
@@ -3252,6 +3354,7 @@ let reviewStars = 5;
             document.getElementById('inp-order-name').value = '';
             document.getElementById('inp-order-items').value = '';
             document.getElementById('inp-order-total').value = '';
+            var delSel2 = document.getElementById('inp-order-delivery'); if (delSel2) delSel2.value = 'outstation';
             document.getElementById('edit-order-idx').value = '-1';
             renderAdminOrders();
             fbSyncAfterSave('آرڈر محفوظ ہو گیا ہے!');
@@ -3262,6 +3365,7 @@ let reviewStars = 5;
             if (!o) return;
             const prevStatus = o.status;
             o.status = newStatus;
+            if (newStatus === 'روانہ' && !o.dispatchedAt) o.dispatchedAt = Date.now();
             if (newStatus === 'ڈیلیور ہو گیا' && prevStatus !== 'ڈیلیور ہو گیا') {
                 totalOrders += 1;
                 localStorage.setItem('asif_total_orders', String(totalOrders));
@@ -3281,6 +3385,8 @@ let reviewStars = 5;
             document.getElementById('inp-order-items').value = (o.items || []).map(it => it.name + ' | ' + it.qty + ' | ' + it.price).join('\n');
             document.getElementById('inp-order-total').value = String(o.total || 0);
             document.getElementById('inp-order-status').value = o.status;
+            var delSel = document.getElementById('inp-order-delivery');
+            if (delSel) delSel.value = o.deliveryType || 'outstation';
         }
 
         function deleteOrder(idx) {
