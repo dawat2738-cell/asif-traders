@@ -1304,7 +1304,7 @@ let reviewStars = 5;
 
         function fbBakedSnapshotString() {
             var b = window.BAKED_STORE_DATA || {};
-            var d = { catalog: b.catalog, pin: b.pin, shop_name: b.shop_name, shop_addr: b.shop_addr, shop_logo: b.shop_logo, web_link: b.web_link, ticker: b.ticker, pol_lahore: b.pol_lahore, pol_out: b.pol_out, pay_jazz: b.pay_jazz, pay_easy: b.pay_easy, pay_upaisa: b.pay_upaisa, pay_sada: b.pay_sada, social_wa: b.social_wa, social_yt: b.social_yt, social_fb: b.social_fb, social_tt: b.social_tt, social_ig: b.social_ig, reviews: b.reviews, orders: b.orders, total_orders: b.total_orders };
+            var d = { catalog: b.catalog, pin: b.pin, shop_name: b.shop_name, shop_addr: b.shop_addr, shop_logo: b.shop_logo, web_link: b.web_link, ticker: b.ticker, pol_lahore: b.pol_lahore, pol_out: b.pol_out, pay_jazz: b.pay_jazz, pay_easy: b.pay_easy, pay_upaisa: b.pay_upaisa, pay_sada: b.pay_sada, social_wa: b.social_wa, social_yt: b.social_yt, social_fb: b.social_fb, social_tt: b.social_tt, social_ig: b.social_ig, reviews: b.reviews, total_orders: b.total_orders };
             return JSON.stringify(d);
         }
 
@@ -1375,7 +1375,6 @@ let reviewStars = 5;
                 if (data.social_tt) localStorage.setItem('asif_social_tt', data.social_tt);
                 if (data.social_ig) localStorage.setItem('asif_social_ig', data.social_ig);
                 if (data.reviews) localStorage.setItem('asif_reviews', JSON.stringify(data.reviews));
-                if (data.orders) localStorage.setItem('asif_orders', JSON.stringify(data.orders));
                 if (typeof data.total_orders === 'number') localStorage.setItem('asif_total_orders', String(data.total_orders));
                 localStorage.setItem('asif_fb_version', String(version || data.version || Date.now()));
                 localStorage.removeItem('asif_fb_dirty');
@@ -1387,7 +1386,44 @@ let reviewStars = 5;
             } catch (e) {}
         }
 
-        // پورا store RTDB پر لکھیں (Admin save کے بعد)
+        // آرڈرز کو انوائس نمبر کے حساب سے محفوظ کریں تاکہ کسٹمر صرف اپنا آرڈر دیکھ سکے (سب کے آرڈر کسی کو نظر نہ آئیں)
+        function ordersArrayToMap() {
+            var map = {};
+            (orders || []).forEach(function (o) {
+                if (o && o.inv) map[String(o.inv).toUpperCase()] = o;
+            });
+            return map;
+        }
+        function ordersMapToArray(map) {
+            if (!map) return [];
+            if (Array.isArray(map)) return map;
+            return Object.keys(map).map(function (k) { return map[k]; });
+        }
+        // سیلر کے لیے آرڈرز الگ سے پڑھیں (صرف سائن ان ہو تو) — لوکل آرڈر ضائع نہ ہوں، دونوں کو ملا کر رکھیں
+        function fbFetchOrdersForSeller() {
+            if (!fbReady || !fbIsSignedIn()) return;
+            fbDb.ref('orders').get().then(function (snap) {
+                var val = snap.val();
+                if (!val) return; // ابھی کوئی آن لائن آرڈر نہیں — لوکل آرڈر برقرار رکھیں
+                var arr = ordersMapToArray(val);
+                var byInv = {};
+                (orders || []).forEach(function (o) { if (o && o.inv) byInv[String(o.inv).toUpperCase()] = o; });
+                arr.forEach(function (o) {
+                    if (o && o.inv && !byInv[String(o.inv).toUpperCase()]) byInv[String(o.inv).toUpperCase()] = o;
+                });
+                orders = Object.keys(byInv).map(function (k) { return byInv[k]; });
+                localStorage.setItem('asif_orders', JSON.stringify(orders));
+            }).catch(function () {});
+        }
+        // REST کال کے لیے سائن ان ٹوکن
+        function fbGetIdToken() {
+            try {
+                if (fbAuth && fbAuth.currentUser) return fbAuth.currentUser.getIdToken();
+            } catch (e) {}
+            return Promise.resolve(null);
+        }
+
+        // پورا store RTDB پر لکھیں (Admin save کے بعد) — آرڈرز الگ محفوظ جگہ پر
         function fbSyncStore(onDone) {
             if (!fbReady) { if (onDone) onDone(false); return; }
             if (!fbIsSignedIn()) { fbShowSignIn(); if (onDone) onDone(false); return; }
@@ -1395,6 +1431,8 @@ let reviewStars = 5;
             data.version = Date.now();
             fbOwnWriteVersion = data.version;
             fbDb.ref('store').set(data).then(function () {
+                return fbDb.ref('orders').set(ordersArrayToMap());
+            }).then(function () {
                 localStorage.setItem('asif_fb_version', String(data.version));
                 localStorage.removeItem('asif_fb_dirty');
                 fbUpdateStatusLine();
@@ -1478,11 +1516,22 @@ let reviewStars = 5;
         function fbAfterSignIn() {
             if (!fbReady || !fbIsSignedIn()) return;
             fbUpdateStatusLine();
+            fbFetchOrdersForSeller();
             fbDb.ref('store').get().then(function (snap) {
                 var remote = snap.val();
                 if (!remote || !remote.catalog) {
                     fbSyncStore(function (ok) { fbUpdateStatusLine(); });
                     return;
+                }
+                // پرانا ڈیٹا: اگر store میں ابھی بھی آرڈرز ہوں تو انہیں محفوظ کر لیں
+                if (remote.orders) {
+                    var remoteOrders = ordersMapToArray(remote.orders);
+                    remoteOrders.forEach(function (ro) {
+                        if (!ro || !ro.inv) return;
+                        var exists = (orders || []).some(function (x) { return String(x.inv).toUpperCase() === String(ro.inv).toUpperCase(); });
+                        if (!exists) orders.push(ro);
+                    });
+                    if (remoteOrders.length) localStorage.setItem('asif_orders', JSON.stringify(orders));
                 }
                 var remoteVersion = remote.version || 0;
                 var cached = parseInt(localStorage.getItem('asif_fb_version') || '0', 10) || 0;
@@ -1596,7 +1645,6 @@ let reviewStars = 5;
                     if (b.social_tt) localStorage.setItem('asif_social_tt', b.social_tt);
                     if (b.social_ig) localStorage.setItem('asif_social_ig', b.social_ig);
                     if (b.reviews) localStorage.setItem('asif_reviews', JSON.stringify(b.reviews));
-                    if (b.orders) localStorage.setItem('asif_orders', JSON.stringify(b.orders));
                     if (typeof b.total_orders === 'number') localStorage.setItem('asif_total_orders', String(b.total_orders));
                     localStorage.setItem('asif_baked_ts', String(fileBakedTs));
                 }
@@ -1612,7 +1660,7 @@ let reviewStars = 5;
 
             // ریویوز، آرڈرز اور کل آرڈرز لوڈ کریں
             try { reviews = JSON.parse(localStorage.getItem('asif_reviews') || '[]'); } catch(e) { reviews = []; }
-            try { orders = JSON.parse(localStorage.getItem('asif_orders') || '[]'); } catch(e) { orders = []; }
+            try { orders = JSON.parse(localStorage.getItem('asif_orders') || '[]'); if (!Array.isArray(orders)) orders = ordersMapToArray(orders); } catch(e) { orders = []; }
             try { myOrders = JSON.parse(localStorage.getItem('asif_my_orders') || '[]'); } catch(e) { myOrders = []; }
             refreshOrderStatuses();
             totalOrders = parseInt(localStorage.getItem('asif_total_orders') || '0', 10) || 0;
@@ -2300,7 +2348,6 @@ let reviewStars = 5;
                 social_tt: localStorage.getItem('asif_social_tt') || 'https://tiktok.com',
                 social_ig: localStorage.getItem('asif_social_ig') || 'https://instagram.com',
                 reviews: reviews,
-                orders: orders,
                 total_orders: totalOrders
             };
         }
@@ -2505,10 +2552,23 @@ let reviewStars = 5;
             let found = null;
             if (orders) found = orders.find(o => String(o.inv).toUpperCase() === inv);
             if (!found && myOrders) found = myOrders.find(o => String(o.inv).toUpperCase() === inv);
-            if (!found) {
-                res.innerHTML = '<p style="color:#fca5a5; font-size:12px; line-height:1.6;">یہ انوائس نمبر نہیں ملا — نمبر دوبارہ چیک کریں یا واٹس ایپ پر رابطہ کریں۔</p>';
+            if (found) { renderTrackResult(found, res); return; }
+            // آن لائن سے صرف اپنا آرڈر پڑھیں (انوائس نمبر سے)
+            if (fbReady && fbDb) {
+                res.innerHTML = '<p style="color:var(--text-muted); font-size:12px;">آرڈر تلاش کیا جا رہا ہے...</p>';
+                fbDb.ref('orders/' + inv).get().then(function (snap) {
+                    var o = snap.val();
+                    if (o) { renderTrackResult(o, res); }
+                    else { res.innerHTML = '<p style="color:#fca5a5; font-size:12px; line-height:1.6;">یہ انوائس نمبر نہیں ملا — نمبر دوبارہ چیک کریں یا واٹس ایپ پر رابطہ کریں۔</p>'; }
+                }).catch(function () {
+                    res.innerHTML = '<p style="color:#fca5a5; font-size:12px; line-height:1.6;">یہ انوائس نمبر نہیں ملا — نمبر دوبارہ چیک کریں یا واٹس ایپ پر رابطہ کریں۔</p>';
+                });
                 return;
             }
+            res.innerHTML = '<p style="color:#fca5a5; font-size:12px; line-height:1.6;">یہ انوائس نمبر نہیں ملا — نمبر دوبارہ چیک کریں یا واٹس ایپ پر رابطہ کریں۔</p>';
+        }
+
+        function renderTrackResult(found, res) {
             let effStatus = getEffectiveStatus(found);
             let idx = ORDER_STATUSES.indexOf(effStatus);
             const cur = idx < 0 ? 0 : idx;
@@ -2607,7 +2667,10 @@ let reviewStars = 5;
         function loadPendingOrders() {
             var list = document.getElementById('admin-pending-list');
             if (!list) return;
-            fetch('https://asif-traders-705c7-default-rtdb.firebaseio.com/pendingOrders.json').then(function(r){ return r.json(); }).then(function(data){
+            fbGetIdToken().then(function (tok) {
+                var url = 'https://asif-traders-705c7-default-rtdb.firebaseio.com/pendingOrders.json' + (tok ? '?auth=' + tok : '');
+                return fetch(url);
+            }).then(function(r){ return r.json(); }).then(function(data){
                 pendingOrdersCache = data || {};
                 renderPendingOrders();
             }).catch(function(){ list.innerHTML = '<p style="font-size:11px; color:var(--text-muted);">نئے آرڈر لوڈ نہیں ہو سکے۔</p>'; });
@@ -2639,7 +2702,10 @@ let reviewStars = 5;
             localStorage.setItem('asif_orders', JSON.stringify(orders));
             renderAdminOrders();
             fbSyncAfterSave('آرڈر منظور ہو گیا ہے!');
-            fetch('https://asif-traders-705c7-default-rtdb.firebaseio.com/pendingOrders/' + encodeURIComponent(inv) + '.json', { method: 'DELETE' }).then(function(){ delete pendingOrdersCache[inv]; renderPendingOrders(); }).catch(function(){});
+            fbGetIdToken().then(function (tok) {
+                var url = 'https://asif-traders-705c7-default-rtdb.firebaseio.com/pendingOrders/' + encodeURIComponent(inv) + '.json' + (tok ? '?auth=' + tok : '');
+                return fetch(url, { method: 'DELETE' });
+            }).then(function(){ delete pendingOrdersCache[inv]; renderPendingOrders(); }).catch(function(){});
         }
 
         function renderAdminOrders() {
