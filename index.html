@@ -811,27 +811,28 @@
         <!-- لاگ ان سکرین -->
         <div class="modal-sheet" id="admin-auth-box" style="display: none;">
             <h3><i class="fa-solid fa-lock"></i> سیلر ایڈمن لاگ ان</h3>
-            <div class="auth-method-tabs">
-                <button class="sheet-btn gold active-tab" id="auth-tab-pin" onclick="authShowMethod('pin')">🔢 پن کوڈ</button>
-                <button class="sheet-btn" id="auth-tab-pattern" onclick="authShowMethod('pattern')">✦ پیٹرن</button>
-                <button class="sheet-btn" id="auth-tab-finger" onclick="authShowMethod('finger')">👆 فنگر پرنٹ</button>
-            </div>
-            <div id="auth-pin-view">
-                <div class="input-row">
-                    <label>سیکیورٹی پن کوڈ درج کریں:</label>
-                    <input type="password" id="admin-pin-input" class="en-font" placeholder="ڈیفالٹ پن: 1234">
-                </div>
-                <button class="sheet-btn gold" style="width:100%;" onclick="authAdmin()">لاگ ان کریں</button>
+            <div id="auth-main-view" style="text-align:center;">
+                <div style="font-size:42px; line-height:1;">👆</div>
+                <p id="auth-finger-main-msg" style="font-size:13px; margin:6px 0;">انگلی لگا کر ایڈمن کھولیں</p>
+                <button class="sheet-btn gold" style="width:100%;" onclick="authFingerLogin()">👆 فنگر پرنٹ سے کھولیں</button>
+                <p id="auth-finger-status" style="font-size:11px; color:var(--text-muted); min-height:14px; margin-top:6px;"></p>
+                <div style="font-size:11px; color:var(--text-muted); margin:6px 0;">— یا —</div>
+                <button class="sheet-btn" style="width:100%;" onclick="authShowMethod('pattern')">✦ پیٹرن سے کھولیں</button>
+                <button class="sheet-btn" style="width:100%; margin-top:6px;" onclick="authShowMethod('pin')">🔢 پن کوڈ سے کھولیں</button>
             </div>
             <div id="auth-pattern-view" style="display:none;">
                 <p id="auth-pattern-msg" style="font-size:12px; text-align:center; margin:4px 0;">اپنا پیٹرن بنائیں</p>
                 <div class="pattern-grid-wrap" id="auth-pattern-grid"></div>
                 <button class="sheet-btn" style="width:100%; margin-top:6px;" onclick="authPatternClear()">دوبارہ بنائیں</button>
+                <button class="sheet-btn" style="width:100%; margin-top:6px;" onclick="authShowMain()">← واپس</button>
             </div>
-            <div id="auth-finger-view" style="display:none; text-align:center;">
-                <p id="auth-finger-msg" style="font-size:12px; margin:6px 0;">انگلی لگا کر ایڈمن کھولیں</p>
-                <button class="sheet-btn gold" style="width:100%;" onclick="authFingerLogin()">👆 فنگر پرنٹ سے کھولیں</button>
-                <p id="auth-finger-status" style="font-size:11px; color:var(--text-muted); min-height:14px; margin-top:6px;"></p>
+            <div id="auth-pin-view" style="display:none;">
+                <div class="input-row">
+                    <label>سیکیورٹی پن کوڈ درج کریں:</label>
+                    <input type="password" id="admin-pin-input" class="en-font" placeholder="ڈیفالٹ پن: 1234">
+                </div>
+                <button class="sheet-btn gold" style="width:100%;" onclick="authAdmin()">لاگ ان کریں</button>
+                <button class="sheet-btn" style="width:100%; margin-top:6px;" onclick="authShowMain()">← واپس</button>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:8px;">
                 <span style="font-size:11px; color:#38bdf8; cursor:pointer;" onclick="toggleForgotPin(true)">پاسورڈ بھول گئے؟ (Reset PIN)</span>
@@ -2084,7 +2085,8 @@ let reviewStars = 5;
             document.getElementById('admin-reset-box').style.display = 'none';
             document.getElementById('admin-dash-box').style.display = 'none';
             document.getElementById('admin-pin-input').value = '';
-            authShowMethod('pin');
+            authShowMethod('main');
+            if (authFingerShowLogin()) { authFingerLogin(); }
         }
 
         function closeAdmin() { 
@@ -2112,16 +2114,16 @@ let reviewStars = 5;
 
         // ===== ایڈمن انلاک: تین طریقے — پن کوڈ، پیٹرن، فنگر پرنٹ =====
         function authShowMethod(m) {
-            ['pin', 'pattern', 'finger'].forEach(function (k) {
-                var tab = document.getElementById('auth-tab-' + k);
-                if (tab) tab.classList.toggle('active-tab', k === m);
-            });
-            document.getElementById('auth-pin-view').style.display = m === 'pin' ? 'block' : 'none';
-            document.getElementById('auth-pattern-view').style.display = m === 'pattern' ? 'block' : 'none';
-            document.getElementById('auth-finger-view').style.display = m === 'finger' ? 'block' : 'none';
+            var main = document.getElementById('auth-main-view');
+            var pin = document.getElementById('auth-pin-view');
+            var pat = document.getElementById('auth-pattern-view');
+            if (main) main.style.display = m === 'main' ? 'block' : 'none';
+            if (pin) pin.style.display = m === 'pin' ? 'block' : 'none';
+            if (pat) pat.style.display = m === 'pattern' ? 'block' : 'none';
             if (m === 'pattern') authPatternShowLogin();
-            if (m === 'finger') authFingerShowLogin();
+            if (m === 'main') authFingerShowLogin();
         }
+        function authShowMain() { authShowMethod('main'); }
 
         // --- پیٹرن گرڈ (دوبارہ قابلِ استعمال: لاگ ان + سیٹ اپ دونوں) ---
         var PATTERN_DOT_POS = [[40, 40], [120, 40], [200, 40], [40, 120], [120, 120], [200, 120], [40, 200], [120, 200], [200, 200]];
@@ -2235,7 +2237,7 @@ let reviewStars = 5;
                     if (seqStr === (localStorage.getItem('asif_admin_pattern') || '')) {
                         unlockAdmin();
                     } else {
-                        msg.textContent = 'غلط پیٹرن! دوبارہ کوشش کریں';
+                        msg.textContent = 'غلط پیٹرن! دوبارہ کوشش کریں — یا واپس جا کر پن کوڈ سے کھولیں';
                     }
                 });
             }
@@ -2312,21 +2314,22 @@ let reviewStars = 5;
             return !!(window.PublicKeyCredential && window.navigator && navigator.credentials && navigator.credentials.create && navigator.credentials.get && window.crypto);
         }
         function authFingerShowLogin() {
-            var msg = document.getElementById('auth-finger-msg');
+            var msg = document.getElementById('auth-finger-main-msg');
             var st = document.getElementById('auth-finger-status');
             var has = !!(localStorage.getItem('asif_admin_webauthn_id') || '');
             if (!authFingerSupported()) {
-                msg.textContent = 'اس فون/براؤزر میں فنگر پرنٹ دستیاب نہیں ہے۔ پن کوڈ یا پیٹرن استعمال کریں۔';
+                if (msg) msg.textContent = 'اس فون/براؤزر میں فنگر پرنٹ دستیاب نہیں ہے — پیٹرن یا پن کوڈ استعمال کریں۔';
                 if (st) st.textContent = '';
-                return;
+                return false;
             }
             if (!has) {
-                msg.textContent = 'فنگر پرنٹ ابھی نہیں لگایا گیا — پہلے پن کوڈ سے لاگ ان کریں، پھر ایڈمن میں "فنگر پرنٹ لگائیں" سے لگائیں۔';
+                if (msg) msg.textContent = 'فنگر پرنٹ نہیں لگایا گیا — پیٹرن یا پن کوڈ استعمال کریں۔';
                 if (st) st.textContent = '';
-                return;
+                return false;
             }
-            msg.textContent = 'انگلی لگا کر ایڈمن کھولیں';
+            if (msg) msg.textContent = 'انگلی لگا کر ایڈمن کھولیں';
             if (st) st.textContent = '';
+            return true;
         }
         async function authFingerLogin() {
             var st = document.getElementById('auth-finger-status');
@@ -2348,8 +2351,8 @@ let reviewStars = 5;
                 });
                 if (cred) { unlockAdmin(); }
             } catch (e) {
-                if (e && e.name === 'NotAllowedError') setSt('منسوخ کر دیا گیا — دوبارہ کوشش کریں یا پن کوڈ استعمال کریں۔');
-                else setSt('فنگر پرنٹ کام نہیں کر سکا — پن کوڈ یا پیٹرن استعمال کریں۔');
+                if (e && e.name === 'NotAllowedError') setSt('منسوخ کر دیا گیا — پیٹرن سے کھولیں یا پن کوڈ استعمال کریں۔');
+                else setSt('فنگر پرنٹ کام نہیں کر سکا — پیٹرن سے کھولیں یا پن کوڈ استعمال کریں۔');
             }
         }
         async function adminFingerRegister() {
