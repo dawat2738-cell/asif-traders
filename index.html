@@ -622,8 +622,6 @@
         .at-listen-bar .at-bars i:nth-child(3){height:10px;animation-delay:.24s}
         .at-listen-bar .at-bars i:nth-child(4){height:15px;animation-delay:.36s}
         @keyframes at-bar-dance{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1.15)}}
-        .at-bot-toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,90px);background:#1b2833;border:1px solid rgba(201,162,39,.55);color:#f4f4ef;border-radius:14px;padding:10px 20px;font-size:14px;z-index:6000;transition:transform .4s;max-width:92vw;text-align:center;line-height:1.9;box-shadow:0 16px 40px rgba(0,0,0,.5)}
-        .at-bot-toast.at-show{transform:translate(-50%,0)}
         .at-flash{outline:3px solid #e8c85a !important;outline-offset:3px}
 
     </style>
@@ -3415,7 +3413,6 @@ let reviewStars = 5;
         </form>
     </div>
     <audio id="atBotClipAudio" preload="auto" style="display:none"></audio>
-    <div class="at-bot-toast" id="atBotToast" role="status"></div>
 
     <!-- باہر نکلنے کی تصدیق — پاپ اپ -->
     <div class="at-exit-backdrop" id="atExitBackdrop" role="dialog" aria-modal="true" aria-labelledby="atExitTitle">
@@ -3803,7 +3800,7 @@ let reviewStars = 5;
         setTimeout(function(){ row.remove(); cb(); },950+Math.random()*500);
       }
       var toastTimer;
-      function atToast(text){ if(!toastEl) return; toastEl.textContent=text; toastEl.classList.add('at-show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){ toastEl.classList.remove('at-show'); },3400); }
+      function atToast(text){ return; }
       function stripHtml(html){ var d=document.createElement('div'); d.innerHTML=html; return (d.textContent||'').replace(/\s+/g,' ').trim(); }
       function viewProductInApp(id){
         win.classList.remove('at-open');
