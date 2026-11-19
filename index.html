@@ -3456,7 +3456,6 @@ let reviewStars = 5;
             <button class="at-lang" type="button" data-atlang="fa">فارسی</button>
             <button class="at-lang" type="button" data-atlang="sd">سندھی</button>
             <button class="at-lang" type="button" data-atlang="ar">عربي</button>
-            <button class="at-lang" type="button" data-atlang="hi">हिन्दी</button>
             <button class="at-lang" type="button" data-atlang="roman">Roman Urdu</button>
         </div>
         <div class="at-msgs" id="atMsgs" aria-live="polite"></div>
@@ -3900,7 +3899,7 @@ let reviewStars = 5;
         var wa=e.target.closest('[data-atwa]');
         if(wa){ window.open(WHATSAPP,'_blank'); }
       });
-      /* ---- Per-language replies (Urdu script, Roman Urdu, English, Punjabi, Sindhi, Pashto, Hindi, Arabic, Farsi) ---- */
+      /* ---- Per-language replies (Urdu script, Roman Urdu, English, Punjabi, Sindhi, Pashto, Arabic, Farsi) ---- */
       var LANG_REPLIES={
         sd:{greet:'<p>السلام عليڪم! مان بلڪل ٺيڪ آهيان، توهان جي پڇڻ جي مهرباني! آصف ٽريڊرز ۾ توهان جو استقبال آهي. اڄ مان توهان جي ڪهڙي مدد ڪري سگهان ٿو؟</p>',
             priceAsk:'<p>جي، ضرور ٻڌائيندس. توهان ڪهڙي شيءِ جي قيمت پڇڻ چاهيو ٿا؟ نالو لکو — قيمت فوري ٻڌائيندس.</p>',
@@ -3914,7 +3913,11 @@ let reviewStars = 5;
             payment:'<p>ادائيگي جا طريقا هي آهن: <b>JazzCash، Easypaisa، U Paisa ۽ SadaPay</b>. نمبر آرڊر ڪرڻ وقت ايپ ۾ ئي نظر ايندا آهن. ننڍن آرڊرن تي اڳواٽ پيسا ان لاءِ ورتا ويندا آهن ته جيئن جعلي آرڊر نه اچن — توهان جا پيسا محفوظ رهندا آهن.</p>',
             tracking:'<p>جي، توهان جو آرڊر ڏسان ٿو. آرڊر جا چار مرحلا آهن: <b>مليو ← تصديق ٿيو ← موڪليو ويو ← پهچايو ويو</b>. پنهنجو انوائس نمبر لکو (مثال طور AT-1234)، مان فوري ٻڌائيندس ته آرڊر ڪهڙي مرحلي تي آهي.</p>',
             privacy:'معاف ڪجو، هي معلومات مان ڪنهن کي به نٿو ٻڌائي سگهان. پن، پاسورڊ، پيٽرن ۽ او ٽي پي دڪان جي ذاتي معلومات آهن. اهڙي ڪنهن ڳالهه لاءِ مهرباني ڪري پاڻ دڪاندار سان WhatsApp تي رابطو ڪريو.',
-            wa:'WhatsApp تي رابطو ڪريو'},
+            wa:'WhatsApp تي رابطو ڪريو',
+            offerLead:'اڄ جي تازي آفر هي آهي:',
+            offerFallback:'<p>اڄ جي آفر لاءِ مٿي واري خاص آفر واري پٽي ڏسو — تازي آفر اتي ئي لکيل آهي.</p>',
+            whoareyou:'<p>مان آصف ٽريڊرز جو مددگار آهيان — هن دڪان جو روبوٽ ساٿي. منهنجو ڪم آهي توهان جي هر سوال جو ادب سان جواب ڏيڻ: قيمت ٻڌائڻ، پراڊڪٽ سامهون آڻڻ، آرڊر جي خبر ڏيڻ، ۽ دڪان جي هر معلومات ڏيڻ.</p>',
+            bye:'<p>الله حافظ! تشريف آوري جي مهرباني. جڏهن به ڪا شيءِ گهرجي، مان هتي ئي آهيان — آصف ٽريڊرز ۾ توهان جو هميشه استقبال آهي.</p>'},
         ps:{greet:'<p>السلام علیکم! زه بالکل ښه یم، ستاسو د پوښتنې نه مننه! آصف ټریډرز ته ښه راغلاست. نن زه ستاسو څه مرسته کولی شم؟</p>',
             priceAsk:'<p>هو، ضرور به ووایم. تاسو د کوم شي بیه پوښتل غواړئ؟ نوم یې ولیکئ — بیه به ژر ووایم.</p>',
             timing:'<p>دوکان هره ورځ سهار ۱۰ بجو نه تر ماښام ۹ بجو پوری خلاص وي.</p>',
@@ -3927,7 +3930,11 @@ let reviewStars = 5;
             payment:'<p>د تادیې طریقې دا دي: <b>JazzCash، Easypaisa، U Paisa او SadaPay</b>. شمیرې د امر کولو په وخت کې په اپ کې ښکاري. په کوچنیو امرونو کې مخکې پیسې ځکه اخیستل کیږي چې جعلي امرونه رانشي — ستاسو پیسې خوندي پاتې کیږي.</p>',
             tracking:'<p>هو، ستاسو امر ګورم. امر څلور مرحلې لري: <b>ترلاسه شو ← تایید شو ← واستول شو ← وسپارل شو</b>. خپل انوائس نمبر ولیکئ (لکه AT-1234)، زه به ژر ووایم چې امر په کومه مرحله کې دی.</p>',
             privacy:'بخښنه غواړم، دا معلومات زه هیچا ته نشم ویلی. پن، پاسورډ، پټرن او او ټي پي د دوکان شخصي معلومات دي. د داسې کومې خبرې لپاره مهرباني وکړئ خپله له دوکاندار سره په WhatsApp اړیکه ونیسئ.',
-            wa:'په WhatsApp اړیکه ونیسئ'},
+            wa:'په WhatsApp اړیکه ونیسئ',
+            offerLead:'نننی تازه وړاندیز دا دی:',
+            offerFallback:'<p>د نن ورځې وړاندیز لپاره پورته ځانګړي وړاندیز پټۍ ته وګورئ — تازه وړاندیز همغلته لیکل شوی دی.</p>',
+            whoareyou:'<p>زه د آصف ټریډرز مرستندوی یم — د همدې دوکان روبوټ ملګری. زما کار دی چې ستاسو هرې پوښتنې ته په ادب ځواب ووایم: بیه ویل، محصول ښودل، د امر خبر ورکول، او د دوکان هر معلومات ورکول.</p>',
+            bye:'<p>الله حافظ! له راتګ نه مو مننه. کله چې هم څه ته اړتیا ولرئ، زه دلته یم — آصف ټریډرز ته ستاسو تل ښه راغلاست دی.</p>'},
         pa:{greet:'<p>وعلیکم السلام! میں بالکل ٹھیک آں، تہاڈے پچھن دا بہت شکریہ! آصف ٹریڈرز وچ تہاڈا سواگت اے۔ دسو، اج کس چیز وچ مدد کراں؟</p>',
             priceAsk:'<p>جی ضرور دساں گا۔ تسی کس چیز دی قیمت پچھنی اے؟ ناں لکھ دیو — قیمت فوراً دس دیاں گا۔</p>',
             timing:'<p>دکان روزانہ سویرے 10 وجے توں رات 9 وجے تک کھلی رہندی اے۔</p>',
@@ -3940,7 +3947,11 @@ let reviewStars = 5;
             payment:'<p>ادائیگی دے طریقے ایہہ نیں: <b>JazzCash، Easypaisa، U Paisa تے SadaPay</b>۔ نمبر آرڈر کرن ویلے ایپ وچ ہی نظر آ جاندے نیں۔ چھوٹے آرڈر تے ایڈوانس اس لئی لیا جاندا اے تاں جو جعلی آرڈر نہ آن — تہاڈا پیسہ محفوظ رہندا اے۔</p>',
             tracking:'<p>جی، تہاڈا آرڈر ویکھنا آں۔ آرڈر دے چار درجے نیں: <b>موصول ہویا ← تصدیق شدہ ← روانہ ← ڈیلیور ہو گیا</b>۔ اپنا انوائس نمبر لکھ دیو (جیویں AT-1234)، میں فوراً دس دیاں گا کہ آرڈر کس درجے تے اے۔</p>',
             privacy:'معذرت چاہنا آں، ایہہ جانکاری میں کسے نوں نہیں دس سکدا۔ پن، پاس ورڈ، پیٹرن تے OTP دکان دی نجی جانکاری اے۔ ایہو جیہی کسے گل لئی براہ کرم دکاندار نال خود WhatsApp تے رابطہ کرو۔',
-            wa:'WhatsApp تے رابطہ کرو'},
+            wa:'WhatsApp تے رابطہ کرو',
+            offerLead:'اج دی تازہ ترین آفر ایہہ اے:',
+            offerFallback:'<p>اج دی آفر لئی اوپر والی خاص آفر والی پٹی ویکھو — تازہ ترین آفر اوتھے ہی لکھی ہوندی اے۔</p>',
+            whoareyou:'<p>میں آصف ٹریڈرز دا مددگار آں — ایسے دکان دا روبوٹ ساتھی۔ میرا کم اے تہاڈے ہر سوال دا ادب نال جواب دینا: قیمت دسنا، پروڈکٹ سامنے لیانا، آرڈر دی خبر دینا، تے دکان دی ہر جانکاری دینا۔</p>',
+            bye:'<p>اللہ حافظ! تشریف آوری دا شکریہ۔ جدوں وی کوئی چیز چاہیدی ہووے، میں ایتھے ہی آں — آصف ٹریڈرز وچ تہاڈا ہمیشہ خیرمقدم اے۔</p>'},
         ar:{greet:'<p>وعليكم السلام ورحمة الله وبركاته! أنا بخير والحمد لله، شكراً لسؤالك. أهلاً بك في آصف تريدرز. كيف أستطيع مساعدتك اليوم؟</p>',
             priceAsk:'<p>بالتأكيد! ما المنتج الذي تريد معرفة سعره؟ اكتب الاسم، وسأخبرك بالسعر فوراً.</p>',
             timing:'<p>المتجر مفتوح يومياً من الساعة 10 صباحاً حتى 9 مساءً.</p>',
@@ -3953,7 +3964,11 @@ let reviewStars = 5;
             payment:'<p>طرق الدفع هي: <b>JazzCash وEasypaisa وU Paisa وSadaPay</b>. تظهر الأرقام في التطبيق نفسه عند الطلب. ويُؤخذ مبلغ مقدم على الطلبات الصغيرة حتى لا تأتي طلبات وهمية — أموالك تبقى آمنة.</p>',
             tracking:'<p>نعم، سأتحقق من طلبك. للطلب أربع مراحل: <b>تم الاستلام ← تم التأكيد ← تم الشحن ← تم التسليم</b>. اكتب رقم الفاتورة (مثلاً AT-1234) وسأخبرك فوراً بالمرحلة التي وصل إليها طلبك.</p>',
             privacy:'عذراً، لا يمكنني مشاركة هذه المعلومات مع أي شخص. أرقام PIN وكلمات المرور والأنماط ورموز OTP هي معلومات خاصة بالمتجر. لمثل هذه الأمور، يرجى التواصل مع صاحب المتجر مباشرة عبر WhatsApp.',
-            wa:'تواصل عبر WhatsApp'},
+            wa:'تواصل عبر WhatsApp',
+            offerLead:'هذا هو أحدث عرض اليوم:',
+            offerFallback:'<p>لعرض اليوم، انظر إلى الشريط الخاص بالعروض في الأعلى — أحدث عرض مكتوب هناك.</p>',
+            whoareyou:'<p>أنا مساعد آصف تريدرز — الرفيق الآلي لهذا المتجر. عملي هو أن أجيب عن كل سؤال من أسئلتك بأدب: إخبارك بالأسعار، وعرض المنتجات، وإخبارك عن طلبك، وإعطاؤك كل المعلومات عن المتجر.</p>',
+            bye:'<p>مع السلامة! شكراً لزيارتك. كلما احتجت إلى أي شيء، فأنا هنا — أهلاً بك دائماً في آصف تريدرز.</p>'},
         fa:{greet:'<p>سلام! حال شما چطور است؟ من خوبم، ممنون که پرسیدید! به آصف تریدرز خوش آمدید. امروز چطور می‌توانم به شما کمک کنم؟</p>',
             priceAsk:'<p>حتماً می‌گویم. قیمت کدام محصول را می‌خواهید بدانید؟ نام آن را بنویسید — قیمت را فوراً می‌گویم.</p>',
             priceLead:'قیمت <b>{n}</b> برابر است با <b>{p}</b>.',
@@ -3966,7 +3981,11 @@ let reviewStars = 5;
             payment:'<p>روش‌های پرداخت این‌ها هستند: <b>JazzCash، Easypaisa، U Paisa و SadaPay</b>. شماره‌ها هنگام سفارش در خود اپلیکیشن دیده می‌شوند. برای سفارش‌های کوچک پیش‌پرداخت گرفته می‌شود تا سفارش جعلی نیاید — پول شما امن می‌ماند.</p>',
             tracking:'<p>بله، سفارش شما را بررسی می‌کنم. سفارش چهار مرحله دارد: <b>دریافت شد ← تایید شد ← ارسال شد ← تحویل داده شد</b>. شماره فاکتور خود را بنویسید (مثلاً AT-1234)، فوراً می‌گویم سفارش در کدام مرحله است.</p>',
             privacy:'متاسفم، این اطلاعات را به هیچ‌کس نمی‌توانم بگویم. رمز، گذرواژه، الگو و کد یک‌بارمصرف اطلاعات خصوصی مغازه است. برای چنین چیزی لطفاً خودتان با صاحب مغازه در WhatsApp تماس بگیرید.',
-            wa:'تماس در WhatsApp'},
+            wa:'تماس در WhatsApp',
+            offerLead:'پیشنهاد تازه امروز این است:',
+            offerFallback:'<p>برای پیشنهاد امروز، به نوار پیشنهاد ویژه در بالا نگاه کنید — تازه‌ترین پیشنهاد همان‌جا نوشته شده است.</p>',
+            whoareyou:'<p>من دستیار آصف تریدرز هستم — همراه رباتیک همین مغازه. کار من این است که به هر سؤال شما با ادب پاسخ دهم: گفتن قیمت، نشان دادن محصول، خبر دادن از سفارش، و دادن هر اطلاعات درباره مغازه.</p>',
+            bye:'<p>خداحافظ! از تشریف‌آوری شما ممنونم. هر وقت چیزی نیاز داشتید، من اینجا هستم — در آصف تریدرز همیشه از شما استقبال می‌شود.</p>'},
         en:{greet:'<p>Hello! I am doing great, thank you for asking. Welcome to Asif Traders. How can I help you today?</p>',
             priceAsk:'<p>Of course! Which product\u2019s price would you like to know? Write its name and I will tell you the price right away.</p>',
             priceLead:'The price of <b>{n}</b> is <b>{p}</b>.',
@@ -3979,7 +3998,11 @@ let reviewStars = 5;
             payment:'<p>Payment methods are: <b>JazzCash, Easypaisa, U Paisa and SadaPay</b>. The numbers are shown in the app itself when you order. A small advance is taken on small orders so fake orders do not come in — your money stays safe.</p>',
             tracking:'<p>Yes, let me check your order. An order has four stages: <b>Received → Confirmed → Dispatched → Delivered</b>. Write your invoice number (e.g. AT-1234) and I will tell you right away which stage it is at.</p>',
             privacy:'I am sorry, I can never share that. PINs, passwords, patterns and OTPs are the shop\u2019s private information. For anything like this, please contact the shop owner directly on WhatsApp.',
-            wa:'Contact on WhatsApp'}
+            wa:'Contact on WhatsApp',
+            offerLead:'Here is today\u2019s latest offer:',
+            offerFallback:'<p>For today\u2019s offer, look at the special-offer strip at the top \u2014 the latest offer is written there.</p>',
+            whoareyou:'<p>I am the helper of Asif Traders \u2014 the robot companion of this very shop. My job is to answer every question of yours politely: telling prices, showing products, giving news of your order, and giving every information about the shop.</p>',
+            bye:'<p>Goodbye! Thank you for visiting. Whenever you need anything, I am right here \u2014 you are always welcome at Asif Traders.</p>'}
       };
       /* Token-based word check: short words are matched as whole tokens only,
          so an Urdu word that merely contains a Farsi/Pashto fragment never
@@ -3995,12 +4018,11 @@ let reviewStars = 5;
          then Punjabi, then Arabic. Urdu is the default fallback — a text
          with no marker in any other language is Urdu. */
       function detectScriptLang(text){
-        if(/[\u0900-\u097F]/.test(text)) return 'hi';
-        if(/[ټډږښګېۍځڅ]/.test(text)||atHasTokens(text,['ستاسو','مننه','څنګه','ډېر','ښه','اوس','کله','چیرته','راکړه','وښایه','غواړم','تړلی','زه','ته','تاسو'])) return 'ps';
+         if(/[ټډږښګېۍځڅ]/.test(text)||atHasTokens(text,['ستاسو','مننه','څنګه','ډېر','ښه','اوس','کله','چیرته','راکړه','وښایه','غواړم','تړلی','زه','ته','تاسو','وړاندیز'])) return 'ps';
         if(/[ٻڄڃڇڏڌڳڱڪ]/.test(text)||atHasTokens(text,['ڇا','ڪيئن','مهرباني','ڪٿي','ڪڏهن'])) return 'sd';
-        if(atHasTokens(text,['چطور','چقدر','چگونه','چه','است','هست','میخواهم','میخوام','کجاست','اینجا','آنجا','این','آن','خداحافظ','بله','خیلی','مرسی','کجا','که','نیست','دارم','چیست','ساعت'])||atHas(text,['نشان بده','نمایش بده'])) return 'fa';
+        if(atHasTokens(text,['چطور','چقدر','چگونه','چه','است','هست','میخواهم','میخوام','کجاست','اینجا','آنجا','این','آن','خداحافظ','بله','خیلی','مرسی','کجا','که','نیست','دارم','چیست','ساعت','پیشنهاد','تخفیف'])||atHas(text,['نشان بده','نمایش بده'])) return 'fa';
         if(atHas(text,['تسی','توں','کیہ','کیتھے','مینوں','توانوں','چنگا','ہور','دسو','کدوں','ساڈا','تہاڈا'])) return 'pa';
-        if(atHas(text,['مرحبا','كيف حالك','كم السعر','ما هو السعر','السعر','العنوان','التوصيل','الدفع','شكرا','أريد','متى تفتح'])) return 'ar';
+        if(atHas(text,['مرحبا','كيف حالك','كم السعر','ما هو السعر','السعر','العنوان','التوصيل','الدفع','شكرا','أريد','متى تفتح','من أنت','مع السلامة','وداعا','العرض','عروض'])) return 'ar';
         return null;
       }
       /* ---- The bot's brain ---- */
@@ -4020,9 +4042,8 @@ let reviewStars = 5;
         var atIsCouponQ=atHas(text,['کوپن','coupon','ڈسکاؤنٹ','discount']);
         if(!atIsCouponQ&&(atHasToken(text,atPrivacyToken)||atHas(text,atPrivacyPhrase))&&atHas(text,['بتا','دے دو','دو','bata','tell','give','کیا ہے','kya hai','code','کوڈ','نمبر','number','پاس','pin','otp','کھولو','open','بگو','بده','چیست','راکړه','ووایه','څه دی','وایه','راښیه'])){
           var pl2=(forcedLang&&LANG_REPLIES[forcedLang])?forcedLang:detectScriptLang(text);
-          if(pl2&&LANG_REPLIES[pl2]&&LANG_REPLIES[pl2].privacy){ atReplyLang=LANG_CODE[pl2]; return {mood:'sorry',clip:((pl2==='fa'||pl2==='ps')?pl2+'-privacy':undefined),html:'<p>'+LANG_REPLIES[pl2].privacy+'</p>'+waButton(LANG_REPLIES[pl2].wa||'WhatsApp')}; }
-          if(/[\u0900-\u097F]/.test(text)) return {mood:'sorry',html:'<p>माफ़ कीजिए, यह जानकारी मैं किसी को नहीं बता सकता। यह दुकान की निजी जानकारी है। इसके लिए कृपया दुकानदार से WhatsApp पर संपर्क करें।</p>'};
-          if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)) return {mood:'sorry',html:'<p class="at-lat">I am sorry, I can never share that. PINs, passwords, patterns and OTPs are the shop\u2019s private information. For anything like this, please contact the shop owner directly on WhatsApp.</p>'};
+          if(pl2&&LANG_REPLIES[pl2]&&LANG_REPLIES[pl2].privacy){ atReplyLang=LANG_CODE[pl2]; return {mood:'sorry',clip:(pl2+'-privacy'),html:'<p>'+LANG_REPLIES[pl2].privacy+'</p>'+waButton(LANG_REPLIES[pl2].wa||'WhatsApp')}; }
+          if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)) return {mood:'sorry',clip:'en-privacy',html:'<p class="at-lat">I am sorry, I can never share that. PINs, passwords, patterns and OTPs are the shop\u2019s private information. For anything like this, please contact the shop owner directly on WhatsApp.</p>'};
           return {mood:'sorry',clip:'privacy',html:'<p>معذرت خواہ ہوں، یہ بات میں کسی کو نہیں بتا سکتا۔ پن، پاس ورڈ، پیٹرن اور OTP دکان کی نجی معلومات ہیں۔ ایسی کسی بات کے لیے براہ کرم دکاندار سے خود WhatsApp پر رابطہ کریں۔</p>'+waButton('WhatsApp پر رابطہ کریں')};
         }
         /* --- Other-language greetings --- */
@@ -4033,23 +4054,6 @@ let reviewStars = 5;
         if(/你好|您好|你好吗/.test(text)) return {mood:'wave',html:'<p class="at-lat">你好！我很好，谢谢。欢迎来到 Asif Traders。今天我能为您做些什么？</p>'};
         if(/привет|здравствуй|как дела/.test(low)) return {mood:'wave',html:'<p class="at-lat">Привет! У меня всё отлично, спасибо. Добро пожаловать в Asif Traders. Чем могу помочь?</p>'};
         if(/こんにちは|元気/.test(text)) return {mood:'wave',html:'<p class="at-lat">こんにちは！元気です、ありがとうございます。Asif Traders へようこそ。今日はどのようなご用件でしょうか？</p>'};
-        /* --- Hindi (Devanagari) --- */
-        if(forcedLang==='hi'||/[\u0900-\u097F]/.test(text)){
-          atReplyLang='hi-IN';
-          if(forcedLang==='hi'&&!/[\u0900-\u097F]/.test(text)){
-            if(/price|cost|rate/.test(low)){ var hp0=findProducts(text); if(hp0.length) return {mood:'happy',clip:'show-products-hi',html:'<p>जी बिल्कुल! <b>'+escapeHtml(hp0[0].name)+'</b> की कीमत <b>Rs '+Number(hp0[0].price).toLocaleString()+'</b> है। यह रहा वह प्रोडक्ट:</p>'+productCard(hp0[0])}; return {mood:'happy',clip:'hi-priceask',html:'<p>जी, ज़रूर बताता हूँ। आप किस चीज़ की कीमत पूछना चाहते हैं — नाम लिखें, कीमत तुरंत बता दूँगा।</p>'}; }
-            if(/time|timing|open|close/.test(low)) return {mood:'happy',clip:'hi-timing',html:'<p>दुकान रोज़ाना सुबह <b>10 बजे से रात 9 बजे</b> तक खुली रहती है।</p>'};
-            if(/address|where|location|pata/.test(low)) return {mood:'happy',clip:'hi-address',html:'<p>हमारी दुकान <b>यूनिस सेंटर, हॉल रोड, लाहौर</b> में है।</p>'};
-            return {mood:'happy',html:'<p>नमस्ते! मैं बहुत अच्छा हूँ, धन्यवाद। मैं आसिफ़ ट्रेडर्स का सहायक हूँ। आप मुझसे किसी भी प्रोडक्ट की कीमत पूछ सकते हैं, प्रोडक्ट दिखाने को कह सकते हैं, या अपने ऑर्डर की जानकारी ले सकते हैं।</p>'};
-          }
-          var hp=findProducts(text);
-          if(hp.length) return {mood:'happy',clip:'show-products-hi',html:'<p>जी बिल्कुल! <b>'+escapeHtml(hp[0].name)+'</b> की कीमत <b>Rs '+Number(hp[0].price).toLocaleString()+'</b> है। यह रहा वह प्रोडक्ट:</p>'+productCard(hp[0])};
-          if(/कीमत|दाम|रेट|प्राइस/.test(text)) return {mood:'happy',clip:'hi-priceask',html:'<p>जी, ज़रूर बताता हूँ। आप किस चीज़ की कीमत पूछना चाहते हैं — नाम लिखें, कीमत तुरंत बता दूँगा।</p>'};
-          if(/दिखा|निकाल|प्रोडक्ट|रिसीवर|रिसिवर|बॉक्स/.test(text)){ var hl=liveCatalog().filter(function(p){ return p.cat==='android'||p.cat==='receiver'; }).slice(0,2); return {mood:'happy',clip:'show-products-hi',html:'<p>जी, अभी निकाल कर देता हूँ। हमारे सबसे ज़्यादा बिकने वाले रिसीवर ये हैं:</p>'+hl.map(productCard).join('')}; }
-          if(/समय|टाइम|खुल|बंद/.test(text)) return {mood:'happy',clip:'hi-timing',html:'<p>दुकान रोज़ाना सुबह <b>10 बजे से रात 9 बजे</b> तक खुली रहती है।</p>'};
-          if(/कहाँ|पता|एड्रेस/.test(text)) return {mood:'happy',clip:'hi-address',html:'<p>हमारी दुकान <b>यूनिस सेंटर, हॉल रोड, लाहौर</b> में है। आप सादर आमंत्रित हैं।</p>'};
-          return {mood:'happy',html:'<p>नमस्ते! मैं बहुत अच्छा हूँ, धन्यवाद। मैं आसिफ़ ट्रेडर्स का सहायक हूँ। आप मुझसे किसी भी प्रोडक्ट की कीमत पूछ सकते हैं, प्रोडक्ट दिखाने को कह सकते हैं, या अपने ऑर्डर की जानकारी ले सकते हैं।</p>'};
-        }
         /* --- Sindhi / Pashto / Punjabi / Arabic / Farsi / English: the reply
                follows the asker's language (auto-detected, or the language
                the customer picked in the chat header). --- */
@@ -4057,21 +4061,24 @@ let reviewStars = 5;
         if(sl&&LANG_REPLIES[sl]){
           atReplyLang=LANG_CODE[sl];
           var R=LANG_REPLIES[sl];
-           var clipL=(sl==='fa'||sl==='ps')?sl:'';
+           var clipL=sl; /* every language now has its own <lang>-* clips */
           var sp2=findProducts(text);
           var named2=/starsat|premium|nobal|media star|echolink|tenda|dahua|xiaomi|v380|inverto|neosat|focus|star track/i.test(text)||atHas(text,['سٹار','میڈیا سٹار','نوبل','پریمیم','ایکولنک','ڈاہوا','شاومی']);
           var isPrice2=atHasTokens(text,['قیمت','price','rate','ریٹ','کتنے','کتنا','دام','سعر','بیه','قيمت','چقدر','چند']);
           var isShow2=atHas(text,['دکھا','نکال','show','dikhao','نشان بده','نمایش بده','وښایه','راکړه','دکھاؤ','دیکھاؤ'])&&(sp2.length>0||atHas(text,['رسیور','ریسیور','ریسيور','باکس','box','receiver','محصول','پروڈکٹ']));
-          if(sp2.length&&named2&&isPrice2){ var _pl=(R.priceLead||'<b>{n}</b> — <b>{p}</b>').replace('{n}',escapeHtml(sp2[0].name)).replace('{p}','Rs '+Number(sp2[0].price).toLocaleString()); var _lead=(sl==='fa')?'حتماً، قیمت آن این است: ':((sl==='ps')?'هو، بیه یې دا ده: ':''); return {mood:'happy',clip:(clipL?clipL+'-pricelead':undefined),html:'<p>'+_lead+_pl+'</p>'+productCard(sp2[0])}; }
+          if(sp2.length&&named2&&isPrice2){ var _pl=(R.priceLead||'<b>{n}</b> — <b>{p}</b>').replace('{n}',escapeHtml(sp2[0].name)).replace('{p}','Rs '+Number(sp2[0].price).toLocaleString()); var _LEAD={fa:'حتماً، قیمت آن این است: ',ps:'هو، بیه یې دا ده: ',en:'The price of this is: ',pa:'ایس دی قیمت اے: ',sd:'جي، هن شيءِ جي قيمت هي آهي: ',ar:'بالتأكيد، سعره هو: '}; var _lead=_LEAD[sl]||''; return {mood:'happy',clip:(clipL?clipL+'-pricelead':undefined),html:'<p>'+_lead+_pl+'</p>'+productCard(sp2[0])}; }
           if(isPrice2) return {mood:'happy',clip:(clipL?clipL+'-price':undefined),html:R.priceAsk};
           if(isShow2&&sp2.length){ var top2=sp2.slice(0,2); return {mood:'happy',clip:(clipL?clipL+'-show':undefined),html:(R.show||'')+top2.map(productCard).join('')}; }
-          if(sp2.length){ var _lead2=(sl==='fa')?'این محصول است: ':((sl==='ps')?'دا محصول دی: ':''); return {mood:'happy',clip:(clipL?clipL+'-showlead':undefined),html:(_lead2?'<p>'+_lead2+'</p>':'')+'<p><b>'+escapeHtml(sp2[0].name)+'</b> — <b>Rs '+Number(sp2[0].price).toLocaleString()+'</b></p>'+productCard(sp2[0])}; }
+          if(sp2.length){ var _LEAD2={fa:'این محصول است: ',ps:'دا محصول دی: ',en:'This product is: ',pa:'ایہہ پروڈکٹ اے: ',sd:'هي پراڊڪٽ آهي: ',ar:'هذا هو المنتج: '}; var _lead2=_LEAD2[sl]||''; return {mood:'happy',clip:(clipL?clipL+'-showlead':undefined),html:(_lead2?'<p>'+_lead2+'</p>':'')+'<p><b>'+escapeHtml(sp2[0].name)+'</b> — <b>Rs '+Number(sp2[0].price).toLocaleString()+'</b></p>'+productCard(sp2[0])}; }
           if(R.tracking&&atHas(text,['آرڈر','order','ٹریک','track','پارسل','parcel','سفارش','فاکتور','زما امر','امر چیرته','امر مې','آرڊر','طلبي'])) return {mood:'happy',clip:(clipL?clipL+'-tracking':undefined),html:R.tracking};
-           if(atHas(text,['ٹائمنگ','timing','کھل','بند','اوقات','کس وقت','time','کله','کڏهن','متى','ساعت کاری','چه ساعتی','ساعت','کله خلاص','څه وخت','وخت'])) return {mood:'happy',clip:(clipL?clipL+'-timing':undefined),html:R.timing};
-          if(atHas(text,['پتہ','address','کہاں ہے','دکان کہاں','location','جگہ','کٿي','دلته','العنوان','آدرس','کجاست','مغازه','چیرته','پته','دوکان چیرته'])) return {mood:'happy',clip:(clipL?clipL+'-address':undefined),html:R.address};
+           if(atHas(text,['ٹائمنگ','timing','کھل','بند','اوقات','کس وقت','time','کله','کڏهن','ڪڏهن','متى','ساعت کاری','چه ساعتی','ساعت','کله خلاص','څه وخت','وخت'])) return {mood:'happy',clip:(clipL?clipL+'-timing':undefined),html:R.timing};
+          if(atHas(text,['پتہ','address','کہاں ہے','دکان کہاں','location','جگہ','کٿي','ڪٿي','دلته','العنوان','آدرس','کجاست','مغازه','چیرته','پته','دوکان چیرته'])) return {mood:'happy',clip:(clipL?clipL+'-address':undefined),html:R.address};
           if(R.delivery&&atHas(text,['ڈیلیوری','delivery','بھیج','ڈلیور','شپنگ','shipping','تحویل','ارسال','پیک','رسوي','لیږل','کوریر','التوصيل','ڊليوري'])) return {mood:'happy',clip:(clipL?clipL+'-delivery':undefined),html:R.delivery};
            if(R.payment&&atHas(text,['پیمنٹ','payment','pay','jazzcash','easypaisa','جیز کیش','ایزی پیسہ','ادائیگی','پیسے','پرداخت','تادیې','شمیرې','الدفع','ادائيگي'])) return {mood:'happy',clip:(clipL?clipL+'-payment':undefined),html:R.payment};
-           if(atHas(text,['کی حال','کیا حال','کیسے ہو','حال چال','ڪيئن','څنګه','كيف حالك','kya haal','kaise ho','how are you','حال شما','چطور است','چطوری','څنګه یې','څنګه یاست'])) return {mood:'wave',clip:(clipL?clipL+'-howareyou':undefined),html:R.greet};
+           if(atHas(text,['آفر','offer','discount','رعایت','sale','سیل','پیشنهاد','تخفیف','وړاندیز','العرض','عروض'])){ var tickEl2=document.getElementById('view-ticker-text'); var tick2=tickEl2?tickEl2.textContent.trim():''; if(tick2) return {mood:'happy',clip:(clipL?clipL+'-offer':undefined),html:'<p>'+(R.offerLead||'')+'</p><p><b>'+escapeHtml(tick2)+'</b></p>'}; return {mood:'happy',clip:(clipL?clipL+'-offer':undefined),html:R.offerFallback||''}; }
+          if(atHas(text,['تم کون','آپ کون','who are you','تمہارا نام','your name','نام کیا','تو کیستی','کیستی','نام شما چیست','شما کی هستید','ته څوک','ستا نوم','تون ڪير','تنهنجو نالو','من أنت','ما اسمك','توں کون','تہاڈا ناں'])) return {mood:'wave',clip:(clipL?clipL+'-whoareyou':undefined),html:R.whoareyou||''};
+          if(atHas(text,['خدا حافظ','خداحافظ','bye','اللہ حافظ','الله حافظ','goodbye','چلتا ہوں','اجازت','مع السلامة','وداعا'])) return {mood:'wave',clip:(clipL?clipL+'-bye':undefined),html:R.bye||''};
+          if(atHas(text,['کی حال','کیا حال','کیسے ہو','حال چال','ڪيئن','څنګه','كيف حالك','kya haal','kaise ho','how are you','حال شما','چطور است','چطوری','څنګه یې','څنګه یاست'])) return {mood:'wave',clip:(clipL?clipL+'-howareyou':undefined),html:R.greet};
           if(atHas(text,['شکریہ','thanks','thank you','shukriya','مہربانی','مهرباني','مننه','شكرا','ممنون','تشکر','مرسی','ډېره مننه','thank'])) return {mood:'happy',clip:(clipL?clipL+'-thanks':undefined),html:R.thanks};
           if(atHas(text,['سلام','salam','salaam','hello','hi','ہیلو','السلام','مرحبا'])) return {mood:'wave',clip:(clipL?clipL+'-greeting':undefined),html:R.greet};
           return {mood:'happy',clip:(clipL?clipL+'-fallback':undefined),html:R.fallback};
@@ -4156,13 +4163,13 @@ let reviewStars = 5;
         /* --- Small talk, in the customer's own language --- */
         if(atHas(text,['کیا حال','کیسے ہو','کیا حال ہے','حال چال','kya haal','kaise ho','kaisa hai','how are you','حالك'])){
           if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)&&/how are you/.test(low))
-            return {mood:'happy',html:'<p class="at-lat">I am doing great, thank you for asking! Welcome to Asif Traders. Ask me any product\u2019s price, say \u201Cshow me a receiver\u201D, or check your order — I am here to help.</p>'};
+            return {mood:'happy',clip:'en-howareyou',html:'<p class="at-lat">I am doing great, thank you for asking! Welcome to Asif Traders. Ask me any product\u2019s price, say \u201Cshow me a receiver\u201D, or check your order — I am here to help.</p>'};
           if(/[\u0600-\u06FF]/.test(text))
             return {mood:'happy',clip:'howareyou',html:'<p>الحمدللہ، میں بالکل ٹھیک ہوں، آپ کے پوچھنے کا بہت شکریہ! آپ سنائیں، آپ کیسے ہیں؟ اور بتائیں، آج کس چیز کی مدد کروں — قیمت پوچھنی ہے، کوئی پروڈکٹ دیکھنا ہے، یا آرڈر کی خبر لینی ہے؟</p>'};
           return {mood:'happy',html:'<p class="at-lat">Alhamdulillah, main bilkul theek hoon, poochne ka bohat shukriya! Aap sunayein, aap kaise hain? Aur batayein, aaj kis cheez mein madad karoon — price poochna hai, product dekhna hai, ya order ki khabar leni hai?</p>'};
         }
         if(atHas(text,['شکریہ','thanks','thank you','shukriya','مہربانی'])){
-          if(isLatin(text)&&/thank/.test(low)) return {mood:'happy',html:'<p class="at-lat">You are most welcome! It is always a pleasure to help. Anything else you would like to ask?</p>'};
+          if(isLatin(text)&&/thank/.test(low)) return {mood:'happy',clip:'en-thanks',html:'<p class="at-lat">You are most welcome! It is always a pleasure to help. Anything else you would like to ask?</p>'};
           return {mood:'happy',clip:'thanks',html:'<p>آپ کا بھی بہت شکریہ! آپ کی خدمت کر کے خوشی ہوتی ہے۔ اور کوئی بات پوچھنی ہو تو میں حاضر ہوں۔</p>'};
         }
         if(atHas(text,['اچھے','بہت اچھا','زبردست','great','nice','good bot','پیارے'])){
@@ -4176,12 +4183,12 @@ let reviewStars = 5;
         }
         if(atHas(text,['سلام','salam','salaam','ہیلو','السلام'])||/(^|[\s,!.؟?])(hi|hello|hey)([\s,!.؟?]|$)/i.test(text)){
           if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)&&/^(hi|hello|hey)/.test(low))
-            return {mood:'wave',html:'<p class="at-lat">Hello and welcome to Asif Traders! I am the shop\u2019s helper. Ask me a price, say \u201Cshow me a product\u201D, or ask about your order — I reply in your own language.</p>'};
+            return {mood:'wave',clip:'en-greeting',html:'<p class="at-lat">Hello and welcome to Asif Traders! I am the shop\u2019s helper. Ask me a price, say \u201Cshow me a product\u201D, or ask about your order — I reply in your own language.</p>'};
           return {mood:'wave',clip:'greeting',html:'<p>وعلیکم السلام ورحمۃ اللہ وبرکاتہ! آصف ٹریڈرز میں خوش آمدید۔ میں آپ کا مددگار ہوں، بتائیں آج کس چیز کی مدد کروں؟</p>'};
         }
         /* --- Friendly fallback: never rude, never lies --- */
         if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)){
-          return {mood:'happy',html:'<p class="at-lat">That is a good question! I can answer anything about this shop — product prices, showing you a product, shop timings, delivery, payment and your order status. And if something is beyond me, I will politely connect you to the shop owner on WhatsApp instead of guessing.</p>'+waButton('Chat on WhatsApp')};
+          return {mood:'happy',clip:'en-fallback',html:'<p class="at-lat">That is a good question! I can answer anything about this shop — product prices, showing you a product, shop timings, delivery, payment and your order status. And if something is beyond me, I will politely connect you to the shop owner on WhatsApp instead of guessing.</p>'+waButton('Chat on WhatsApp')};
         }
         return {mood:'happy',clip:'fallback',html:'<p>جی، میں سن رہا ہوں اور آپ کی بات سمجھنے کی پوری کوشش کرتا ہوں۔ دکان کی ہر چیز میں میں آپ کی مدد کر سکتا ہوں — کسی پروڈکٹ کی <b>قیمت</b> پوچھیں، <b>”ریسیور نکال کر دکھاؤ“</b> کہیں، <b>ٹائمنگ، پتہ، ڈیلیوری</b> یا اپنے <b>آرڈر</b> کی خبر لیں۔ اور جو بات میرے بس سے باہر ہو، اس میں جھوٹ نہیں بولوں گا — ادب سے آپ کو دکاندار سے WhatsApp پر ملا دوں گا۔</p>'+waButton('WhatsApp پر رابطہ کریں')};
       }
@@ -4208,9 +4215,9 @@ let reviewStars = 5;
       /* ---- Language selector: the customer picks a language, the bot answers
              in that language every time (stored, survives reloads). Empty =
              automatic detection from the typed text. ---- */
-      var LANG_NAMES={ur:'اردو',en:'English',pa:'پنجابی',ps:'پښتو',fa:'فارسی',sd:'سندھی',ar:'عربي',hi:'हिन्दी',roman:'Roman Urdu'};
-      var LANG_CODE={ur:'ur-PK',roman:'ur-PK',en:'en-US',pa:'pa-PK',ps:'ps-AF',fa:'fa-IR',sd:'sd-PK',ar:'ar-SA',hi:'hi-IN'};
-      var PLACEHOLDERS={ur:'اپنا سوال لکھیں یا مائیک دبا کر بولیں',en:'Type your question or tap the mic to speak',pa:'اپنا سوال لکھو یا مائیک دبا کے بولو',ps:'خپله پوښتنه ولیکئ یا مایک ووهئ',fa:'سؤال خود را بنویسید یا روی میکروفون بزنید',sd:'پنهنجو سوال لکو يا مائيڪ دٻايو',ar:'اكتب سؤالك أو اضغط على الميكروفون للتحدث',hi:'अपना सवाल लिखें या माइक दबाकर बोलें',roman:'Apna sawaal likhain ya mic daba kar bolain'};
+      var LANG_NAMES={ur:'اردو',en:'English',pa:'پنجابی',ps:'پښتو',fa:'فارسی',sd:'سندھی',ar:'عربي',roman:'Roman Urdu'};
+      var LANG_CODE={ur:'ur-PK',roman:'ur-PK',en:'en-US',pa:'pa-PK',ps:'ps-AF',fa:'fa-IR',sd:'sd-PK',ar:'ar-SA'};
+      var PLACEHOLDERS={ur:'اپنا سوال لکھیں یا مائیک دبا کر بولیں',en:'Type your question or tap the mic to speak',pa:'اپنا سوال لکھو یا مائیک دبا کے بولو',ps:'خپله پوښتنه ولیکئ یا مایک ووهئ',fa:'سؤال خود را بنویسید یا روی میکروفون بزنید',sd:'پنهنجو سوال لکو يا مائيڪ دٻايو',ar:'اكتب سؤالك أو اضغط على الميكروفون للتحدث',roman:'Apna sawaal likhain ya mic daba kar bolain'};
       var CHIP_Q={
         ur:[['آج کی آفر','آج کی آفر کیا ہے؟'],['قیمت پوچھیں','Premium Max کی قیمت کیا ہے؟'],['پروڈکٹ دکھاؤ','مجھے ریسیور نکال کر دکھاؤ'],['ٹائمنگ','دکان کی ٹائمنگ کیا ہے؟'],['میرا آرڈر','میرا آرڈر کہاں ہے؟']],
         en:[['Today\u2019s offer','What is today\u2019s offer?'],['Ask price','What is the price of Premium Max?'],['Show product','Show me a receiver'],['Timing','What are the shop timings?'],['My order','Where is my order?']],
@@ -4219,7 +4226,6 @@ let reviewStars = 5;
         pa:[['اج دی آفر','اج دی آفر کی اے؟'],['قیمت پچھو','Premium Max دی قیمت کی اے؟'],['پروڈکٹ وکھاؤ','مینوں ریسیور وکھاؤ'],['ٹائمنگ','دکان دی ٹائمنگ کی اے؟'],['میرا آرڈر','میرا آرڈر کتھے اے؟']],
         sd:[['اڄ جي آفر','اڄ ڪهڙي آفر آهي؟'],['قيمت پڇو','Premium Max جي قيمت ڪيتري آهي؟'],['پرادڪٽ ڏيکاريو','مونکي رسيور ڏيکاريو'],['ٽائمنگ','دڪان ڪڏهن کليل آهي؟'],['منهنجو آرڊر','منهنجو آرڊر ڪٿي آهي؟']],
         ar:[['عرض اليوم','ما هو عرض اليوم؟'],['اسأل عن السعر','ما هو سعر Premium Max؟'],['اعرض منتجاً','اعرض لي جهاز استقبال'],['أوقات العمل','ما هي أوقات عمل المتجر؟'],['طلبي','أين طلبي؟']],
-        hi:[['आज का ऑफर','आज का ऑफर क्या है?'],['कीमत पूछें','Premium Max की कीमत क्या है?'],['प्रोडक्ट दिखाएं','मुझे रिसीवर निकाल कर दिखाएं'],['टाइमिंग','दुकान की टाइमिंग क्या है?'],['मेरा ऑर्डर','मेरा ऑर्डर कहाँ है?']],
         roman:[['Aaj ki offer','Aaj ki offer kya hai?'],['Price poochain','Premium Max ki price kya hai?'],['Product dikhao','Mujhe receiver nikaal kar dikhao'],['Timing','Dukaan ki timing kya hai?'],['Mera order','Mera order kahan hai?']]
       };
       var langBar=document.getElementById('atLangBar');
@@ -4250,7 +4256,7 @@ let reviewStars = 5;
         if(sl==='sd') return 'sd-PK';
         if(sl==='pa') return 'pa-PK';
         if(sl==='ar') return 'ar-SA';
-        if(/[\u0900-\u097F]/.test(text)) return 'hi-IN';
+        if(/[\u0900-\u097F]/.test(text)) return 'ur-PK'; /* Devanagari input is answered in Urdu — Urdu voice/clips */
         if(/[\u0600-\u06FF]/.test(text)) return 'ur-PK';
         if(/[¿¡]/.test(text)||/\b(hola|gracias|bienvenid)/i.test(text)) return 'es-ES';
         if(/\b(bonjour|merci|bienvenue)\b/i.test(text)) return 'fr-FR';
@@ -4286,7 +4292,6 @@ let reviewStars = 5;
         'ur-PK':{noSpeech:'اس فون یا براؤزر میں بولنے کی سہولت موجود نہیں ہے — جواب صرف لکھ کر آئے گا۔',noMale:'اس فون میں اس زبان کی مردانہ آواز نہیں ہے — عورت کی آواز بالکل نہیں چلے گی، اس لیے جواب صرف لکھ کر دیا گیا ہے۔',failed:'فون کی آواز نہیں چل سکی — فون کا والیوم چیک کر لیں، جواب لکھ کر آ گیا ہے۔'},
         'fa-IR':{noSpeech:'در این گوشی یا مرورگر امکان صحبت کردن نیست — پاسخ فقط به صورت نوشته آمده است۔',noMale:'در این گوشی صدای مردانه‌ای برای این زبان نیست — صدای زنانه هرگز پخش نمی‌شود، پس پاسخ فقط به صورت نوشته آمده است۔',failed:'صدای گوشی پخش نشد — بلندی صدا را بررسی کنید، پاسخ به صورت نوشته آمده است۔'},
         'ps-AF':{noSpeech:'په دې تلیفون یا براوزر کې د خبرو کولو اسانتیا نشته — ځواب یوازې په لیکلي بڼه راغلی دی.',noMale:'په دې تلیفون کې د دې ژبې نارینه غږ نشته — ښځینه غږ به هېڅکله نه غږېږي، نو ځواب یوازې په لیکلي بڼه راغلی دی.',failed:'د تلیفون غږ ونه چلېد — آواز وګورئ، ځواب په لیکلي بڼه راغلی دی.'},
-        'hi-IN':{noSpeech:'इस फ़ोन या ब्राउज़र में बोलने की सुविधा नहीं है — जवाब सिर्फ़ लिखकर आएगा।',noMale:'इस फ़ोन में इस भाषा की पुरुष आवाज़ नहीं है — महिला की आवाज़ बिल्कुल नहीं चलेगी, इसलिए जवाब सिर्फ़ लिखकर दिया गया है।',failed:'फ़ोन की आवाज़ नहीं चली — वॉल्यूम जाँच लें, जवाब लिखकर आ गया है।'},
         'en-US':{noSpeech:'This phone or browser cannot speak — the reply is written only.',noMale:'This phone has no male voice for this language — a female voice will never play, so the reply is written only.',failed:'The phone audio did not play — check the volume; the reply is written here.'},
         'ar-SA':{noSpeech:'لا يمكن لهذا الهاتف أو المتصفح التحدث — الرد مكتوب فقط.',noMale:'لا يوجد صوت رجالي لهذه اللغة على هذا الهاتف — لن يُشغَّل صوت نسائي أبداً، لذا الرد مكتوب فقط.',failed:'تعذّر تشغيل صوت الهاتف — تحقق من مستوى الصوت؛ الرد مكتوب هنا.'},
         'sd-PK':{noSpeech:'هن فون يا براوزر ۾ ڳالهائڻ جي سهولت ناهي — جواب صرف لکيل آهي.',noMale:'هن فون ۾ هن ٻوليءَ لاءِ مرداڻو آواز ناهي — عورت جو آواز ڪڏهن به نه هلندو، تنهنڪري جواب صرف لکيل آهي.',failed:'فون جو آواز نه هليو — ووليم چيڪ ڪريو، جواب لکيل آهي.'},
@@ -4326,7 +4331,7 @@ let reviewStars = 5;
       /* Pre-recorded MALE voice for the common answers — recorded once in a
          man's voice. Clips live in voice/*.mp3 and load ON DEMAND when the bot
          speaks, so the page itself stays small and opens fast. */
-      var RECORDED={"greeting":"voice/greeting.mp3","howareyou":"voice/howareyou.mp3","offer":"voice/offer.mp3","timing":"voice/timing.mp3","address":"voice/address.mp3","delivery":"voice/delivery.mp3","payment":"voice/payment.mp3","tracking":"voice/tracking.mp3","privacy":"voice/privacy.mp3","show-products":"voice/show-products.mp3","show-products-hi":"voice/show-products-hi.mp3","show-premium":"voice/show-premium.mp3","show-android":"voice/show-android.mp3","fa-greeting":"voice/fa-greeting.mp3","fa-howareyou":"voice/fa-howareyou.mp3","fa-price":"voice/fa-price.mp3","fa-timing":"voice/fa-timing.mp3","fa-address":"voice/fa-address.mp3","fa-delivery":"voice/fa-delivery.mp3","fa-payment":"voice/fa-payment.mp3","fa-tracking":"voice/fa-tracking.mp3","fa-privacy":"voice/fa-privacy.mp3","fa-show":"voice/fa-show.mp3","ps-greeting":"voice/ps-greeting.mp3","ps-howareyou":"voice/ps-howareyou.mp3","ps-price":"voice/ps-price.mp3","ps-timing":"voice/ps-timing.mp3","ps-address":"voice/ps-address.mp3","ps-delivery":"voice/ps-delivery.mp3","ps-payment":"voice/ps-payment.mp3","ps-tracking":"voice/ps-tracking.mp3","ps-privacy":"voice/ps-privacy.mp3","ps-show":"voice/ps-show.mp3","priceask":"voice/priceask.mp3","thanks":"voice/thanks.mp3","whoareyou":"voice/whoareyou.mp3","bye":"voice/bye.mp3","fallback":"voice/fallback.mp3","hi-priceask":"voice/hi-priceask.mp3","hi-timing":"voice/hi-timing.mp3","hi-address":"voice/hi-address.mp3","fa-pricelead":"voice/fa-pricelead.mp3","fa-showlead":"voice/fa-showlead.mp3","fa-thanks":"voice/fa-thanks.mp3","fa-fallback":"voice/fa-fallback.mp3","ps-pricelead":"voice/ps-pricelead.mp3","ps-showlead":"voice/ps-showlead.mp3","ps-thanks":"voice/ps-thanks.mp3","ps-fallback":"voice/ps-fallback.mp3"};
+      var RECORDED={"greeting":"voice/greeting.mp3","howareyou":"voice/howareyou.mp3","offer":"voice/offer.mp3","timing":"voice/timing.mp3","address":"voice/address.mp3","delivery":"voice/delivery.mp3","payment":"voice/payment.mp3","tracking":"voice/tracking.mp3","privacy":"voice/privacy.mp3","show-products":"voice/show-products.mp3","show-premium":"voice/show-premium.mp3","show-android":"voice/show-android.mp3","fa-greeting":"voice/fa-greeting.mp3","fa-howareyou":"voice/fa-howareyou.mp3","fa-price":"voice/fa-price.mp3","fa-timing":"voice/fa-timing.mp3","fa-address":"voice/fa-address.mp3","fa-delivery":"voice/fa-delivery.mp3","fa-payment":"voice/fa-payment.mp3","fa-tracking":"voice/fa-tracking.mp3","fa-privacy":"voice/fa-privacy.mp3","fa-show":"voice/fa-show.mp3","ps-greeting":"voice/ps-greeting.mp3","ps-howareyou":"voice/ps-howareyou.mp3","ps-price":"voice/ps-price.mp3","ps-timing":"voice/ps-timing.mp3","ps-address":"voice/ps-address.mp3","ps-delivery":"voice/ps-delivery.mp3","ps-payment":"voice/ps-payment.mp3","ps-tracking":"voice/ps-tracking.mp3","ps-privacy":"voice/ps-privacy.mp3","ps-show":"voice/ps-show.mp3","priceask":"voice/priceask.mp3","thanks":"voice/thanks.mp3","whoareyou":"voice/whoareyou.mp3","bye":"voice/bye.mp3","fallback":"voice/fallback.mp3","fa-pricelead":"voice/fa-pricelead.mp3","fa-showlead":"voice/fa-showlead.mp3","fa-thanks":"voice/fa-thanks.mp3","fa-fallback":"voice/fa-fallback.mp3","ps-pricelead":"voice/ps-pricelead.mp3","ps-showlead":"voice/ps-showlead.mp3","ps-thanks":"voice/ps-thanks.mp3","ps-fallback":"voice/ps-fallback.mp3","en-greeting":"voice/en-greeting.mp3","en-howareyou":"voice/en-howareyou.mp3","en-price":"voice/en-price.mp3","en-pricelead":"voice/en-pricelead.mp3","en-timing":"voice/en-timing.mp3","en-address":"voice/en-address.mp3","en-delivery":"voice/en-delivery.mp3","en-payment":"voice/en-payment.mp3","en-tracking":"voice/en-tracking.mp3","en-privacy":"voice/en-privacy.mp3","en-show":"voice/en-show.mp3","en-showlead":"voice/en-showlead.mp3","en-thanks":"voice/en-thanks.mp3","en-fallback":"voice/en-fallback.mp3","pa-greeting":"voice/pa-greeting.mp3","pa-howareyou":"voice/pa-howareyou.mp3","pa-price":"voice/pa-price.mp3","pa-pricelead":"voice/pa-pricelead.mp3","pa-timing":"voice/pa-timing.mp3","pa-address":"voice/pa-address.mp3","pa-delivery":"voice/pa-delivery.mp3","pa-payment":"voice/pa-payment.mp3","pa-tracking":"voice/pa-tracking.mp3","pa-privacy":"voice/pa-privacy.mp3","pa-show":"voice/pa-show.mp3","pa-showlead":"voice/pa-showlead.mp3","pa-thanks":"voice/pa-thanks.mp3","pa-fallback":"voice/pa-fallback.mp3","sd-greeting":"voice/sd-greeting.mp3","sd-howareyou":"voice/sd-howareyou.mp3","sd-price":"voice/sd-price.mp3","sd-pricelead":"voice/sd-pricelead.mp3","sd-timing":"voice/sd-timing.mp3","sd-address":"voice/sd-address.mp3","sd-delivery":"voice/sd-delivery.mp3","sd-payment":"voice/sd-payment.mp3","sd-tracking":"voice/sd-tracking.mp3","sd-privacy":"voice/sd-privacy.mp3","sd-show":"voice/sd-show.mp3","sd-showlead":"voice/sd-showlead.mp3","sd-thanks":"voice/sd-thanks.mp3","sd-fallback":"voice/sd-fallback.mp3","ar-greeting":"voice/ar-greeting.mp3","ar-howareyou":"voice/ar-howareyou.mp3","ar-price":"voice/ar-price.mp3","ar-pricelead":"voice/ar-pricelead.mp3","ar-timing":"voice/ar-timing.mp3","ar-address":"voice/ar-address.mp3","ar-delivery":"voice/ar-delivery.mp3","ar-payment":"voice/ar-payment.mp3","ar-tracking":"voice/ar-tracking.mp3","ar-privacy":"voice/ar-privacy.mp3","ar-show":"voice/ar-show.mp3","ar-showlead":"voice/ar-showlead.mp3","ar-thanks":"voice/ar-thanks.mp3","ar-fallback":"voice/ar-fallback.mp3","fa-offer":"voice/fa-offer.mp3","fa-whoareyou":"voice/fa-whoareyou.mp3","fa-bye":"voice/fa-bye.mp3","ps-offer":"voice/ps-offer.mp3","ps-whoareyou":"voice/ps-whoareyou.mp3","ps-bye":"voice/ps-bye.mp3","en-offer":"voice/en-offer.mp3","en-whoareyou":"voice/en-whoareyou.mp3","en-bye":"voice/en-bye.mp3","pa-offer":"voice/pa-offer.mp3","pa-whoareyou":"voice/pa-whoareyou.mp3","pa-bye":"voice/pa-bye.mp3","sd-offer":"voice/sd-offer.mp3","sd-whoareyou":"voice/sd-whoareyou.mp3","sd-bye":"voice/sd-bye.mp3","ar-offer":"voice/ar-offer.mp3","ar-whoareyou":"voice/ar-whoareyou.mp3","ar-bye":"voice/ar-bye.mp3"};
       var clipFallback=null,clipToken=0,clipLoadTimer=null;
       function stopRecorded(){ if(!clipAudio) return; clipToken++; clearTimeout(clipLoadTimer); try{ clipAudio.pause(); clipAudio.currentTime=0; }catch(e){} clipFallback=null; }
       function playRecorded(clipId,mood,fallbackFn){
@@ -4361,14 +4366,14 @@ let reviewStars = 5;
       function speakReply(html,mood,clip){
         var text=stripHtml(html);
         if(!text) return;
-        /* Recorded clips are language-matched audio (plain ids = Urdu, fa-/ps-/hi- prefixes = that language): play them only when the
+        /* Recorded clips are language-matched audio (plain ids = Urdu, <lang>- prefixes = that language): play them only when the
            reply is in that same language — never Urdu audio for a Farsi,
            Pashto, Sindhi, Punjabi, Arabic or English reply. Other languages
            use a verified male TTS voice for their own language, or stay
            silent text-only when the phone has no such male voice. */
         var rl=atReplyLang||replyLang(text);
         var clipOk=false;
-        if(clip){ if(clip==='show-products-hi') clipOk=(rl==='hi-IN'); else if(clip.indexOf('fa-')===0) clipOk=(rl==='fa-IR'); else if(clip.indexOf('ps-')===0) clipOk=(rl==='ps-AF'); else if(clip.indexOf('hi-')===0) clipOk=(rl==='hi-IN'); else clipOk=(rl==='ur-PK'); }
+        if(clip){ var _cm={'fa-':'fa-IR','ps-':'ps-AF','en-':'en-US','pa-':'pa-PK','sd-':'sd-PK','ar-':'ar-SA'}; var _cp=clip.slice(0,3); clipOk=_cm[_cp]?(rl===_cm[_cp]):(rl==='ur-PK'); }
         if(clipOk&&playRecorded(clip,mood,function(){ speakText(text,mood); })) { atReplyLang=null; return; }
         speakText(text,mood);
         atReplyLang=null;
@@ -4434,14 +4439,13 @@ let reviewStars = 5;
           /* فاب کا ٹیپ صارف کا اشارہ ہے — سلام کی آواز فوراً چلائیں (ریکارڈ شدہ مردانہ آواز، ورنہ مردانہ TTS) */
           (function(){
             var gText=GREETING_SPEAK, gClip='greeting';
-            if(atBotLang&&LANG_REPLIES[atBotLang]){ gText=stripHtml(LANG_REPLIES[atBotLang].greet); gClip=(atBotLang==='fa'||atBotLang==='ps')?atBotLang+'-greeting':null; atReplyLang=LANG_CODE[atBotLang]; }
-            else if(atBotLang==='hi'){ gText='नमस्ते! मैं बहुत अच्छा हूँ, धन्यवाद। मैं आसिफ़ ट्रेडर्स का सहायक हूँ। आप मुझसे किसी भी प्रोडक्ट की कीमत पूछ सकते हैं, प्रोडक्ट दिखाने को कह सकते हैं, या अपने ऑर्डर की जानकारी ले सकते हैं।'; gClip=null; atReplyLang='hi-IN'; }
+            if(atBotLang&&LANG_REPLIES[atBotLang]){ gText=stripHtml(LANG_REPLIES[atBotLang].greet); gClip=atBotLang+'-greeting'; atReplyLang=LANG_CODE[atBotLang]; }
             if(gClip){ if(!playRecorded(gClip,'wave',function(){ speakText(gText,'wave'); })) speakText(gText,'wave'); }
             else speakText(gText,'wave');
           })();
           setTimeout(function(){
             showTyping(function(){
-              addBot((atBotLang&&LANG_REPLIES[atBotLang])?LANG_REPLIES[atBotLang].greet:(atBotLang==='hi'?'<p>नमस्ते! मैं बहुत अच्छा हूँ, धन्यवाद। मैं आसिफ़ ट्रेडर्स का सहायक हूँ। आप मुझसे किसी भी प्रोडक्ट की कीमत पूछ सकते हैं, प्रोडक्ट दिखाने को कह सकते हैं, या अपने ऑर्डर की जानकारी ले सकते हैं।</p>':'<p>السلام علیکم ورحمۃ اللہ وبرکاتہ! میں <b>آصف ٹریڈرز کا مددگار</b> ہوں — حرکت کرتا ہوا آپ کا روبوٹ ساتھی۔</p><p>مجھ سے کچھ بھی پوچھیں: کسی چیز کی <b>قیمت</b>، <b>پروڈکٹ دکھانا</b>، <b>آج کی آفر</b>، دکان کی <b>ٹائمنگ</b> یا اپنے <b>آرڈر</b> کی خبر۔ جس زبان میں لکھیں گے، اسی زبان میں ادب سے جواب دوں گا۔ بتائیں، آج کس چیز کی مدد کروں؟</p>'),'wave');
+              addBot((atBotLang&&LANG_REPLIES[atBotLang])?LANG_REPLIES[atBotLang].greet:'<p>السلام علیکم ورحمۃ اللہ وبرکاتہ! میں <b>آصف ٹریڈرز کا مددگار</b> ہوں — حرکت کرتا ہوا آپ کا روبوٹ ساتھی۔</p><p>مجھ سے کچھ بھی پوچھیں: کسی چیز کی <b>قیمت</b>، <b>پروڈکٹ دکھانا</b>، <b>آج کی آفر</b>، دکان کی <b>ٹائمنگ</b> یا اپنے <b>آرڈر</b> کی خبر۔ جس زبان میں لکھیں گے، اسی زبان میں ادب سے جواب دوں گا۔ بتائیں، آج کس چیز کی مدد کروں؟</p>','wave');
             });
           },700);
         }
