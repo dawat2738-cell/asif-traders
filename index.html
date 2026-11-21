@@ -528,7 +528,9 @@
         .at-exit-btns .at-yes:active{background:#6fd63a}
         .at-exit-btns .at-no{background:#333a45}
         .at-exit-card .at-done-txt{color:#c3c7cd;font-size:15.5px;margin:6px 0 0;line-height:1.9}
-        .at-exit-card .at-reopen{margin-top:18px;width:100%;border:0;border-radius:13px;background:#5dbe2b;color:#fff;font-size:17.5px;font-weight:700;padding:9px;min-height:3.1rem}
+        .at-exit-card .at-reopen-link{display:inline-block;margin-top:16px;color:#e8c85a;font-size:15px;text-decoration:underline;cursor:pointer}
+        body.at-app-closed>*{display:none!important}
+        body.at-app-closed #atExitedScreen{display:flex!important}
         .at-exit-card.at-inline-exit{margin:14px auto 0;max-width:100%;box-shadow:0 12px 30px rgba(0,0,0,.45)}
         .at-exit-result{display:none;margin:12px 0 0;font-size:15.5px;font-weight:700;color:#6fd63a;line-height:1.9;text-align:center}
         .at-exit-result.at-show{display:block}
@@ -3517,9 +3519,9 @@ let reviewStars = 5;
                     <path d="M19 29.5 26 36.5 39.5 22" stroke="#5dbe2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h3 id="atExitedTitle">آپ باہر نکل گئے ہیں</h3>
-            <p class="at-done-txt">ایپ بند ہو گئی ہے۔ دوبارہ کھولنے کے لیے نیچے والا بٹن دبائیں۔</p>
-            <button class="at-reopen" type="button" id="atReopenBtn">ایپ دوبارہ کھولیں</button>
+            <h3 id="atExitedTitle">ایپ بند ہو گئی ہے</h3>
+            <p class="at-done-txt">ٹیب بند کر دیں یا فون کا بیک بٹن دبائیں</p>
+            <a href="#" class="at-reopen-link" id="atReopenBtn">دوبارہ کھولیں</a>
         </div>
     </div>
 
@@ -3702,12 +3704,18 @@ let reviewStars = 5;
           atInlineNo=document.getElementById("atInlineNo"),
           atExitResult=document.getElementById("atExitResult"),
           atReopenBtn=document.getElementById("atReopenBtn");
-      function atOpenExit(){ if(atExitedScreen) atExitedScreen.classList.remove("at-open"); if(atExitBackdrop) atExitBackdrop.classList.add("at-open"); }
+      var atExiting=false;
+      function atOpenExit(){ if(atExiting) return; if(atExitedScreen) atExitedScreen.classList.remove("at-open"); if(atExitBackdrop) atExitBackdrop.classList.add("at-open"); }
       function atCloseExit(){ if(atExitBackdrop) atExitBackdrop.classList.remove("at-open"); }
       function atDoExit(){
+        atExiting=true;
         atCloseExit();
         try{ window.close(); }catch(e){}
-        if(atExitedScreen) atExitedScreen.classList.add("at-open");
+        setTimeout(function(){
+          try{ history.back(); }catch(e){}
+          document.body.classList.add("at-app-closed");
+          if(atExitedScreen) atExitedScreen.classList.add("at-open");
+        },400);
       }
       function atDoStay(){
         atCloseExit();
@@ -3719,14 +3727,14 @@ let reviewStars = 5;
       if(atExitNo) atExitNo.addEventListener("click",atDoStay);
       if(atExitYes) atExitYes.addEventListener("click",atDoExit);
       if(atExitBackdrop) atExitBackdrop.addEventListener("click",function(e){ if(e.target===atExitBackdrop) atCloseExit(); });
-      if(atReopenBtn) atReopenBtn.addEventListener("click",function(){ if(atExitedScreen) atExitedScreen.classList.remove("at-open"); if(atExitResult) atExitResult.classList.remove("at-show"); });
+      if(atReopenBtn) atReopenBtn.addEventListener("click",function(e){ if(e) e.preventDefault(); atExiting=false; document.body.classList.remove("at-app-closed"); if(atExitedScreen) atExitedScreen.classList.remove("at-open"); if(atExitResult) atExitResult.classList.remove("at-show"); });
       document.addEventListener("keydown",function(e){ if(e.key==="Escape") atCloseExit(); });
       /* Back-button guard: plant a history entry; when Back is pressed the
          popstate fires instead of leaving, the Yes/No box opens, and the
          guard is planted again so the next Back press asks again too. */
       function atArmBackGuard(){ try{ history.pushState({exitGuard:true},""); }catch(e){} }
       atArmBackGuard();
-      window.addEventListener("popstate",function(){ atOpenExit(); atArmBackGuard(); });
+      window.addEventListener("popstate",function(){ if(atExiting){ atArmBackGuard(); return; } atOpenExit(); atArmBackGuard(); });
     })();
 
     /* ===== AT-NEW: chatbot — animated robot, polite, answers everything except privacy ===== */
@@ -4028,6 +4036,14 @@ let reviewStars = 5;
       /* ---- The bot's brain ---- */
       function botReply(raw){
         var text=raw.trim(),low=text.toLowerCase();
+        /* Per-product recorded voice: pp-<lang>-<id> speaks the full sentence
+           "<product name> costs <price> rupees" in that language. The 10
+           over-long Pashto clips (>12s) are excluded here and are NOT in
+           RECORDED, so they are treated as missing (empty queue). */
+        var PP_EXCLUDED={'pp-ps-4':1,'pp-ps-9':1,'pp-ps-11':1,'pp-ps-14':1,'pp-ps-19':1,'pp-ps-22':1,'pp-ps-28':1,'pp-ps-29':1,'pp-ps-34':1,'pp-ps-43':1};
+        function ppClip(lang,id){ var c='pp-'+lang+'-'+id; return PP_EXCLUDED[c]?null:c; }
+        function ppQueue(lang,ids){ var q=[]; for(var i=0;i<ids.length;i++){ var c=ppClip(lang,ids[i]); if(c) q.push(c); } return q; }
+        function ppIds(list){ var ids=[]; for(var i=0;i<list.length;i++){ ids.push(list[i].id); } return ids; }
         var forcedLang=atBotLang;
         /* --- Privacy: refuse politely, in the asker's language. Never reveal
                PIN / password / pattern / fingerprint / OTP / master code.
@@ -4042,9 +4058,9 @@ let reviewStars = 5;
         var atIsCouponQ=atHas(text,['کوپن','coupon','ڈسکاؤنٹ','discount']);
         if(!atIsCouponQ&&(atHasToken(text,atPrivacyToken)||atHas(text,atPrivacyPhrase))&&atHas(text,['بتا','دے دو','دو','bata','tell','give','کیا ہے','kya hai','code','کوڈ','نمبر','number','پاس','pin','otp','کھولو','open','بگو','بده','چیست','راکړه','ووایه','څه دی','وایه','راښیه'])){
           var pl2=(forcedLang&&LANG_REPLIES[forcedLang])?forcedLang:detectScriptLang(text);
-          if(pl2&&LANG_REPLIES[pl2]&&LANG_REPLIES[pl2].privacy){ atReplyLang=LANG_CODE[pl2]; return {mood:'sorry',clip:(pl2+'-privacy'),html:'<p>'+LANG_REPLIES[pl2].privacy+'</p>'+waButton(LANG_REPLIES[pl2].wa||'WhatsApp')}; }
-          if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)) return {mood:'sorry',clip:'en-privacy',html:'<p class="at-lat">I am sorry, I can never share that. PINs, passwords, patterns and OTPs are the shop\u2019s private information. For anything like this, please contact the shop owner directly on WhatsApp.</p>'};
-          return {mood:'sorry',clip:'privacy',html:'<p>معذرت خواہ ہوں، یہ بات میں کسی کو نہیں بتا سکتا۔ پن، پاس ورڈ، پیٹرن اور OTP دکان کی نجی معلومات ہیں۔ ایسی کسی بات کے لیے براہ کرم دکاندار سے خود WhatsApp پر رابطہ کریں۔</p>'+waButton('WhatsApp پر رابطہ کریں')};
+          if(pl2&&LANG_REPLIES[pl2]&&LANG_REPLIES[pl2].privacy){ atReplyLang=LANG_CODE[pl2]; return {mood:'sorry',clip:(pl2+'-privacy'),queue:[pl2+'-privacy'],html:'<p>'+LANG_REPLIES[pl2].privacy+'</p>'+waButton(LANG_REPLIES[pl2].wa||'WhatsApp')}; }
+          if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)) return {mood:'sorry',clip:'en-privacy',queue:['en-privacy'],html:'<p class="at-lat">I am sorry, I can never share that. PINs, passwords, patterns and OTPs are the shop\u2019s private information. For anything like this, please contact the shop owner directly on WhatsApp.</p>'};
+          return {mood:'sorry',clip:'privacy',queue:['privacy'],html:'<p>معذرت خواہ ہوں، یہ بات میں کسی کو نہیں بتا سکتا۔ پن، پاس ورڈ، پیٹرن اور OTP دکان کی نجی معلومات ہیں۔ ایسی کسی بات کے لیے براہ کرم دکاندار سے خود WhatsApp پر رابطہ کریں۔</p>'+waButton('WhatsApp پر رابطہ کریں')};
         }
         /* --- Other-language greetings --- */
         if(/hola|buenas|¿?cómo estás|¿?como estas/.test(low)) return {mood:'wave',html:'<p class="at-lat">¡Hola! Estoy muy bien, gracias. Bienvenido a Asif Traders. ¿En qué puedo ayudarle hoy: un precio, un producto o su pedido?</p>'};
@@ -4066,28 +4082,28 @@ let reviewStars = 5;
           var named2=/starsat|premium|nobal|media star|echolink|tenda|dahua|xiaomi|v380|inverto|neosat|focus|star track/i.test(text)||atHas(text,['سٹار','میڈیا سٹار','نوبل','پریمیم','ایکولنک','ڈاہوا','شاومی']);
           var isPrice2=atHasTokens(text,['قیمت','price','rate','ریٹ','کتنے','کتنا','دام','سعر','بیه','قيمت','چقدر','چند']);
           var isShow2=atHas(text,['دکھا','نکال','show','dikhao','نشان بده','نمایش بده','وښایه','راکړه','دکھاؤ','دیکھاؤ'])&&(sp2.length>0||atHas(text,['رسیور','ریسیور','ریسيور','باکس','box','receiver','محصول','پروڈکٹ']));
-          if(sp2.length&&named2&&isPrice2){ var _pl=(R.priceLead||'<b>{n}</b> — <b>{p}</b>').replace('{n}',escapeHtml(sp2[0].name)).replace('{p}','Rs '+Number(sp2[0].price).toLocaleString()); var _LEAD={fa:'حتماً، قیمت آن این است: ',ps:'هو، بیه یې دا ده: ',en:'The price of this is: ',pa:'ایس دی قیمت اے: ',sd:'جي، هن شيءِ جي قيمت هي آهي: ',ar:'بالتأكيد، سعره هو: '}; var _lead=_LEAD[sl]||''; return {mood:'happy',clip:(clipL?clipL+'-pricelead':undefined),html:'<p>'+_lead+_pl+'</p>'+productCard(sp2[0])}; }
-          if(isPrice2) return {mood:'happy',clip:(clipL?clipL+'-price':undefined),html:R.priceAsk};
-          if(isShow2&&sp2.length){ var top2=sp2.slice(0,2); return {mood:'happy',clip:(clipL?clipL+'-show':undefined),html:(R.show||'')+top2.map(productCard).join('')}; }
-          if(sp2.length){ var _LEAD2={fa:'این محصول است: ',ps:'دا محصول دی: ',en:'This product is: ',pa:'ایہہ پروڈکٹ اے: ',sd:'هي پراڊڪٽ آهي: ',ar:'هذا هو المنتج: '}; var _lead2=_LEAD2[sl]||''; return {mood:'happy',clip:(clipL?clipL+'-showlead':undefined),html:(_lead2?'<p>'+_lead2+'</p>':'')+'<p><b>'+escapeHtml(sp2[0].name)+'</b> — <b>Rs '+Number(sp2[0].price).toLocaleString()+'</b></p>'+productCard(sp2[0])}; }
-          if(R.tracking&&atHas(text,['آرڈر','order','ٹریک','track','پارسل','parcel','سفارش','فاکتور','زما امر','امر چیرته','امر مې','آرڊر','طلبي'])) return {mood:'happy',clip:(clipL?clipL+'-tracking':undefined),html:R.tracking};
-           if(atHas(text,['ٹائمنگ','timing','کھل','بند','اوقات','کس وقت','time','کله','کڏهن','ڪڏهن','متى','ساعت کاری','چه ساعتی','ساعت','کله خلاص','څه وخت','وخت'])) return {mood:'happy',clip:(clipL?clipL+'-timing':undefined),html:R.timing};
-          if(atHas(text,['پتہ','address','کہاں ہے','دکان کہاں','location','جگہ','کٿي','ڪٿي','دلته','العنوان','آدرس','کجاست','مغازه','چیرته','پته','دوکان چیرته'])) return {mood:'happy',clip:(clipL?clipL+'-address':undefined),html:R.address};
-          if(R.delivery&&atHas(text,['ڈیلیوری','delivery','بھیج','ڈلیور','شپنگ','shipping','تحویل','ارسال','پیک','رسوي','لیږل','کوریر','التوصيل','ڊليوري'])) return {mood:'happy',clip:(clipL?clipL+'-delivery':undefined),html:R.delivery};
-           if(R.payment&&atHas(text,['پیمنٹ','payment','pay','jazzcash','easypaisa','جیز کیش','ایزی پیسہ','ادائیگی','پیسے','پرداخت','تادیې','شمیرې','الدفع','ادائيگي'])) return {mood:'happy',clip:(clipL?clipL+'-payment':undefined),html:R.payment};
-           if(atHas(text,['آفر','offer','discount','رعایت','sale','سیل','پیشنهاد','تخفیف','وړاندیز','العرض','عروض'])){ var tickEl2=document.getElementById('view-ticker-text'); var tick2=tickEl2?tickEl2.textContent.trim():''; if(tick2) return {mood:'happy',clip:(clipL?clipL+'-offer':undefined),html:'<p>'+(R.offerLead||'')+'</p><p><b>'+escapeHtml(tick2)+'</b></p>'}; return {mood:'happy',clip:(clipL?clipL+'-offer':undefined),html:R.offerFallback||''}; }
-          if(atHas(text,['تم کون','آپ کون','who are you','تمہارا نام','your name','نام کیا','تو کیستی','کیستی','نام شما چیست','شما کی هستید','ته څوک','ستا نوم','تون ڪير','تنهنجو نالو','من أنت','ما اسمك','توں کون','تہاڈا ناں'])) return {mood:'wave',clip:(clipL?clipL+'-whoareyou':undefined),html:R.whoareyou||''};
-          if(atHas(text,['خدا حافظ','خداحافظ','bye','اللہ حافظ','الله حافظ','goodbye','چلتا ہوں','اجازت','مع السلامة','وداعا'])) return {mood:'wave',clip:(clipL?clipL+'-bye':undefined),html:R.bye||''};
-          if(atHas(text,['کی حال','کیا حال','کیسے ہو','حال چال','ڪيئن','څنګه','كيف حالك','kya haal','kaise ho','how are you','حال شما','چطور است','چطوری','څنګه یې','څنګه یاست'])) return {mood:'wave',clip:(clipL?clipL+'-howareyou':undefined),html:R.greet};
-          if(atHas(text,['شکریہ','thanks','thank you','shukriya','مہربانی','مهرباني','مننه','شكرا','ممنون','تشکر','مرسی','ډېره مننه','thank'])) return {mood:'happy',clip:(clipL?clipL+'-thanks':undefined),html:R.thanks};
-          if(atHas(text,['سلام','salam','salaam','hello','hi','ہیلو','السلام','مرحبا'])) return {mood:'wave',clip:(clipL?clipL+'-greeting':undefined),html:R.greet};
-          return {mood:'happy',clip:(clipL?clipL+'-fallback':undefined),html:R.fallback};
+          if(sp2.length&&named2&&isPrice2){ var _pl=(R.priceLead||'<b>{n}</b> — <b>{p}</b>').replace('{n}',escapeHtml(sp2[0].name)).replace('{p}','Rs '+Number(sp2[0].price).toLocaleString()); var _LEAD={fa:'حتماً، قیمت آن این است: ',ps:'هو، بیه یې دا ده: ',en:'The price of this is: ',pa:'ایس دی قیمت اے: ',sd:'جي، هن شيءِ جي قيمت هي آهي: ',ar:'بالتأكيد، سعره هو: '}; var _lead=_LEAD[sl]||''; return {mood:'happy',clip:(clipL?clipL+'-pricelead':undefined),queue:ppQueue(sl,[sp2[0].id]),prodId:sp2[0].id,html:'<p>'+_lead+_pl+'</p>'+productCard(sp2[0])}; }
+          if(isPrice2) return {mood:'happy',clip:(clipL?clipL+'-price':undefined),queue:[clipL+'-price'],html:R.priceAsk};
+          if(isShow2&&sp2.length){ var top2=sp2.slice(0,2); return {mood:'happy',clip:(clipL?clipL+'-show':undefined),queue:[clipL+'-show'].concat(ppQueue(sl,ppIds(top2))),prodIds:ppIds(top2),html:(R.show||'')+top2.map(productCard).join('')}; }
+          if(sp2.length){ var _LEAD2={fa:'این محصول است: ',ps:'دا محصول دی: ',en:'This product is: ',pa:'ایہہ پروڈکٹ اے: ',sd:'هي پراڊڪٽ آهي: ',ar:'هذا هو المنتج: '}; var _lead2=_LEAD2[sl]||''; return {mood:'happy',clip:(clipL?clipL+'-showlead':undefined),queue:ppQueue(sl,[sp2[0].id]),prodId:sp2[0].id,html:(_lead2?'<p>'+_lead2+'</p>':'')+'<p><b>'+escapeHtml(sp2[0].name)+'</b> — <b>Rs '+Number(sp2[0].price).toLocaleString()+'</b></p>'+productCard(sp2[0])}; }
+          if(R.tracking&&atHas(text,['آرڈر','order','ٹریک','track','پارسل','parcel','سفارش','فاکتور','زما امر','امر چیرته','امر مې','آرڊر','طلبي'])) return {mood:'happy',clip:(clipL?clipL+'-tracking':undefined),queue:[clipL+'-tracking'],html:R.tracking};
+           if(atHas(text,['ٹائمنگ','timing','کھل','بند','اوقات','کس وقت','time','کله','کڏهن','ڪڏهن','متى','ساعت کاری','چه ساعتی','ساعت','کله خلاص','څه وخت','وخت'])) return {mood:'happy',clip:(clipL?clipL+'-timing':undefined),queue:[clipL+'-timing'],html:R.timing};
+          if(atHas(text,['پتہ','address','کہاں ہے','دکان کہاں','location','جگہ','کٿي','ڪٿي','دلته','العنوان','آدرس','کجاست','مغازه','چیرته','پته','دوکان چیرته'])) return {mood:'happy',clip:(clipL?clipL+'-address':undefined),queue:[clipL+'-address'],html:R.address};
+          if(R.delivery&&atHas(text,['ڈیلیوری','delivery','بھیج','ڈلیور','شپنگ','shipping','تحویل','ارسال','پیک','رسوي','لیږل','کوریر','التوصيل','ڊليوري'])) return {mood:'happy',clip:(clipL?clipL+'-delivery':undefined),queue:[clipL+'-delivery'],html:R.delivery};
+           if(R.payment&&atHas(text,['پیمنٹ','payment','pay','jazzcash','easypaisa','جیز کیش','ایزی پیسہ','ادائیگی','پیسے','پرداخت','تادیې','شمیرې','الدفع','ادائيگي'])) return {mood:'happy',clip:(clipL?clipL+'-payment':undefined),queue:[clipL+'-payment'],html:R.payment};
+           if(atHas(text,['آفر','offer','discount','رعایت','sale','سیل','پیشنهاد','تخفیف','وړاندیز','العرض','عروض'])){ var tickEl2=document.getElementById('view-ticker-text'); var tick2=tickEl2?tickEl2.textContent.trim():''; if(tick2) return {mood:'happy',clip:(clipL?clipL+'-offer':undefined),queue:[clipL+'-offer'],noteKind:'partial',html:'<p>'+(R.offerLead||'')+'</p><p><b>'+escapeHtml(tick2)+'</b></p>'}; return {mood:'happy',clip:(clipL?clipL+'-offer':undefined),queue:[clipL+'-offer'],noteKind:'partial',html:R.offerFallback||''}; }
+          if(atHas(text,['تم کون','آپ کون','who are you','تمہارا نام','your name','نام کیا','تو کیستی','کیستی','نام شما چیست','شما کی هستید','ته څوک','ستا نوم','تون ڪير','تنهنجو نالو','من أنت','ما اسمك','توں کون','تہاڈا ناں'])) return {mood:'wave',clip:(clipL?clipL+'-whoareyou':undefined),queue:[clipL+'-whoareyou'],html:R.whoareyou||''};
+          if(atHas(text,['خدا حافظ','خداحافظ','bye','اللہ حافظ','الله حافظ','goodbye','چلتا ہوں','اجازت','مع السلامة','وداعا'])) return {mood:'wave',clip:(clipL?clipL+'-bye':undefined),queue:[clipL+'-bye'],html:R.bye||''};
+          if(atHas(text,['کی حال','کیا حال','کیسے ہو','حال چال','ڪيئن','څنګه','كيف حالك','kya haal','kaise ho','how are you','حال شما','چطور است','چطوری','څنګه یې','څنګه یاست'])) return {mood:'wave',clip:(clipL?clipL+'-howareyou':undefined),queue:[clipL+'-howareyou'],html:R.greet};
+          if(atHas(text,['شکریہ','thanks','thank you','shukriya','مہربانی','مهرباني','مننه','شكرا','ممنون','تشکر','مرسی','ډېره مننه','thank'])) return {mood:'happy',clip:(clipL?clipL+'-thanks':undefined),queue:[clipL+'-thanks'],html:R.thanks};
+          if(atHas(text,['سلام','salam','salaam','hello','hi','ہیلو','السلام','مرحبا'])) return {mood:'wave',clip:(clipL?clipL+'-greeting':undefined),queue:[clipL+'-greeting'],html:R.greet};
+          return {mood:'happy',clip:(clipL?clipL+'-fallback':undefined),queue:[clipL+'-fallback'],html:R.fallback};
         }
         /* --- Tiger T-300: NOT in this app's catalog — say so honestly, show the
                closest real Android boxes with their real prices. No invented price. --- */
         if(/tiger|t-300|t300|ٹائیگر/i.test(text)){
           var androids=liveCatalog().filter(function(p){ return p.cat==='android'; }).slice(0,2);
-          return {mood:'happy',clip:'show-products',html:'<p>Tiger T-300 اس وقت اس ایپ کی کیٹلاگ میں موجود نہیں ہے — اس لیے میں اس کی قیمت نہیں بتا سکتا۔ اس کی جگہ ہمارے سب سے زیادہ بکنے والے اینڈرائیڈ باکسز یہ ہیں، جن کی قیمتیں بالکل درست ہیں:</p>'+androids.map(productCard).join('')+'<p>اگر Tiger T-300 ہی چاہیے تو دکاندار سے WhatsApp پر پوچھ لیں:</p>'+waButton('WhatsApp پر پوچھیں')};
+          return {mood:'happy',clip:'show-products',queue:['show-products'].concat(ppQueue('ur',ppIds(androids))),prodIds:ppIds(androids),html:'<p>Tiger T-300 اس وقت اس ایپ کی کیٹلاگ میں موجود نہیں ہے — اس لیے میں اس کی قیمت نہیں بتا سکتا۔ اس کی جگہ ہمارے سب سے زیادہ بکنے والے اینڈرائیڈ باکسز یہ ہیں، جن کی قیمتیں بالکل درست ہیں:</p>'+androids.map(productCard).join('')+'<p>اگر Tiger T-300 ہی چاہیے تو دکاندار سے WhatsApp پر پوچھ لیں:</p>'+waButton('WhatsApp پر پوچھیں')};
         }
         /* --- Show me a product (real card from the live catalog, never a WhatsApp fallback) --- */
         var showWords=['دکھا','نکال','dikhao','dikha','show','سامنے لا','samne la','samnay'];
@@ -4101,35 +4117,35 @@ let reviewStars = 5;
           if(found.length===1||(found.length>0&&found[0].name&&/starsat|premium|nobal|media star|echolink|tenda|dahua/i.test(text))){
             var one=found[0];
             var clipId=one.cat==='android'?(one.id===4?'show-premium':'show-android'):'show-products';
-            return {mood:'happy',clip:clipId,html:'<p>جی بالکل، یہ رہا — سامنے لے آیا ہوں:</p>'+productCard(one)};
+            return {mood:'happy',clip:clipId,queue:ppQueue('ur',[one.id]),prodId:one.id,html:'<p>جی بالکل، یہ رہا — سامنے لے آیا ہوں:</p>'+productCard(one)};
           }
           if(found.length>0){
             var top=found.slice(0,2);
-            return {mood:'happy',clip:'show-products',html:'<p>جی بالکل، ابھی نکال کر سامنے لاتا ہوں۔ یہ ہمارے سب سے زیادہ بکنے والے ہیں، جو پسند آئے اسی پر ”ایپ میں دیکھیں“ دبائیں:</p>'+top.map(productCard).join('')};
+            return {mood:'happy',clip:'show-products',queue:['show-products'].concat(ppQueue('ur',ppIds(top))),prodIds:ppIds(top),html:'<p>جی بالکل، ابھی نکال کر سامنے لاتا ہوں۔ یہ ہمارے سب سے زیادہ بکنے والے ہیں، جو پسند آئے اسی پر ”ایپ میں دیکھیں“ دبائیں:</p>'+top.map(productCard).join('')};
           }
           var best=liveCatalog().filter(function(p){ return p.cat==='android'||p.cat==='receiver'; }).slice(0,2);
-          return {mood:'happy',clip:'show-products',html:'<p>جی بالکل، ابھی نکال کر سامنے لاتا ہوں۔ یہ ہمارے سب سے زیادہ بکنے والے ریسیور اور باکسز ہیں:</p>'+best.map(productCard).join('')};
+          return {mood:'happy',clip:'show-products',queue:['show-products'].concat(ppQueue('ur',ppIds(best))),prodIds:ppIds(best),html:'<p>جی بالکل، ابھی نکال کر سامنے لاتا ہوں۔ یہ ہمارے سب سے زیادہ بکنے والے ریسیور اور باکسز ہیں:</p>'+best.map(productCard).join('')};
         }
         /* --- Price (from the live catalog) --- */
         var priceWords=['قیمت','price','rate','ریٹ','kitne','کتنے','کتنا','dam','دام','cost'];
         if(found.length&&atHas(text,priceWords.concat(['چاہیے','chahiye','خرید','buy','لینا']))){
           var pp=found[0];
           var pc=pp.cat==='android'?(pp.id===4?'show-premium':'show-android'):'show-products';
-          return {mood:'happy',clip:pc,html:'<p>جی بالکل! <b>'+escapeHtml(pp.name)+'</b> کی قیمت <b>Rs '+Number(pp.price).toLocaleString()+'</b> ہے۔ یہ رہا وہ پروڈکٹ:</p>'+productCard(pp)};
+          return {mood:'happy',clip:pc,queue:ppQueue('ur',[pp.id]),prodId:pp.id,html:'<p>جی بالکل! <b>'+escapeHtml(pp.name)+'</b> کی قیمت <b>Rs '+Number(pp.price).toLocaleString()+'</b> ہے۔ یہ رہا وہ پروڈکٹ:</p>'+productCard(pp)};
         }
         if(atHas(text,priceWords)){
-          return {mood:'happy',clip:'priceask',html:'<p>جی ضرور بتاتا ہوں۔ آپ کس چیز کی قیمت پوچھنا چاہتے ہیں؟ نام لکھ دیں، جیسے <b>Premium Max</b>، <b>StarSat 8K</b> یا <b>ECHOLINK ریسیور</b> — قیمت فوراً بتا دوں گا۔</p>'};
+          return {mood:'happy',clip:'priceask',queue:['priceask'],html:'<p>جی ضرور بتاتا ہوں۔ آپ کس چیز کی قیمت پوچھنا چاہتے ہیں؟ نام لکھ دیں، جیسے <b>Premium Max</b>، <b>StarSat 8K</b> یا <b>ECHOLINK ریسیور</b> — قیمت فوراً بتا دوں گا۔</p>'};
         }
         if(found.length){
           var fp=found[0];
-          return {mood:'happy',clip:fp.cat==='android'?(fp.id===4?'show-premium':'show-android'):'show-products',html:'<p>یہ رہا <b>'+escapeHtml(fp.name)+'</b> — قیمت <b>Rs '+Number(fp.price).toLocaleString()+'</b> ہے:</p>'+productCard(fp)};
+          return {mood:'happy',clip:fp.cat==='android'?(fp.id===4?'show-premium':'show-android'):'show-products',queue:ppQueue('ur',[fp.id]),prodId:fp.id,html:'<p>یہ رہا <b>'+escapeHtml(fp.name)+'</b> — قیمت <b>Rs '+Number(fp.price).toLocaleString()+'</b> ہے:</p>'+productCard(fp)};
         }
         /* --- Today's offer: read the LIVE ticker text, never a fixed price --- */
         if(atHas(text,['آفر','offer','discount','رعایت','sale','سیل'])){
           var tickEl=document.getElementById('view-ticker-text');
           var tick=tickEl?tickEl.textContent.trim():'';
-          if(tick) return {mood:'happy',clip:'offer',html:'<p>آج کی تازہ ترین آفر یہ ہے:</p><p><b>'+escapeHtml(tick)+'</b></p>'};
-          return {mood:'happy',clip:'offer',html:'<p>آج کی آفر کے لیے اوپر والی خصوصی آفر والی پٹی دیکھیں — تازہ ترین آفر وہیں لکھی ہوتی ہے۔</p>'};
+          if(tick) return {mood:'happy',clip:'offer',queue:['offer'],noteKind:'partial',html:'<p>آج کی تازہ ترین آفر یہ ہے:</p><p><b>'+escapeHtml(tick)+'</b></p>'};
+          return {mood:'happy',clip:'offer',queue:['offer'],noteKind:'partial',html:'<p>آج کی آفر کے لیے اوپر والی خصوصی آفر والی پٹی دیکھیں — تازہ ترین آفر وہیں لکھی ہوتی ہے۔</p>'};
         }
         /* --- Order tracking: real lookup, never a guessed status --- */
         var invMatch=text.match(/AT-\d{3,}/i);
@@ -4145,52 +4161,52 @@ let reviewStars = 5;
           return {mood:'sorry',html:'<p>یہ انوائس نمبر <b>'+escapeHtml(inv)+'</b> نہیں ملا — نمبر دوبارہ چیک کریں، یا نیچے ”آرڈر ٹریک کریں“ والے حصے میں دیکھیں، یا WhatsApp پر رابطہ کریں۔</p>'+waButton('WhatsApp پر رابطہ کریں')};
         }
         if(atHas(text,['آرڈر','order','ٹریک','track','پارسل','parcel'])){
-          return {mood:'happy',clip:'tracking',html:'<p>جی، آپ کا آرڈر دیکھ لیتا ہوں۔ آرڈر کے چار درجے ہوتے ہیں: <b>موصول ہوا ← تصدیق شدہ ← روانہ ← ڈیلیور ہو گیا</b>۔ اپنا انوائس نمبر لکھ دیں (جیسے AT-1234)، میں فوراً بتا دیتا ہوں کہ آرڈر کس درجے پر ہے۔</p>'};
+          return {mood:'happy',clip:'tracking',queue:['tracking'],html:'<p>جی، آپ کا آرڈر دیکھ لیتا ہوں۔ آرڈر کے چار درجے ہوتے ہیں: <b>موصول ہوا ← تصدیق شدہ ← روانہ ← ڈیلیور ہو گیا</b>۔ اپنا انوائس نمبر لکھ دیں (جیسے AT-1234)، میں فوراً بتا دیتا ہوں کہ آرڈر کس درجے پر ہے۔</p>'};
         }
         /* --- Timing / address / delivery / payment --- */
         if(atHas(text,['ٹائمنگ','timing','کھل','بند','اوقات','کس وقت','time'])){
-          return {mood:'happy',clip:'timing',html:'<p>دکان روزانہ صبح <b>10 بجے سے رات 9 بجے</b> تک کھلی رہتی ہے، ساتوں دن۔ آپ کا خیرمقدم ہے!</p>'};
+          return {mood:'happy',clip:'timing',queue:['timing'],html:'<p>دکان روزانہ صبح <b>10 بجے سے رات 9 بجے</b> تک کھلی رہتی ہے، ساتوں دن۔ آپ کا خیرمقدم ہے!</p>'};
         }
         if(atHas(text,['پتہ','address','کہاں ہے','دکان کہاں','location','جگہ'])){
-          return {mood:'happy',clip:'address',html:'<p>ہماری دکان <b>یونس سینٹر، ہال روڈ، لاہور</b> میں ہے۔ تشریف لائیں، چائے ہماری طرف سے!</p>'};
+          return {mood:'happy',clip:'address',queue:['address'],html:'<p>ہماری دکان <b>یونس سینٹر، ہال روڈ، لاہور</b> میں ہے۔ تشریف لائیں، چائے ہماری طرف سے!</p>'};
         }
         if(atHas(text,['ڈیلیوری','delivery','بھیج','ڈلیور','شپنگ','shipping'])){
-          return {mood:'happy',clip:'delivery',html:'<p>جی، ڈیلیوری پورے پاکستان میں ہوتی ہے۔ لاہور میں ہمارا اپنا رائیڈر پہنچاتا ہے اور دوسرے شہروں کے لیے کورئیر سے بھیجا جاتا ہے۔ باہر کے آرڈر پر روانگی سے پہلے ویڈیو ڈیمو بھی دکھایا جاتا ہے تاکہ آپ مطمئن ہو جائیں۔</p>'};
+          return {mood:'happy',clip:'delivery',queue:['delivery'],html:'<p>جی، ڈیلیوری پورے پاکستان میں ہوتی ہے۔ لاہور میں ہمارا اپنا رائیڈر پہنچاتا ہے اور دوسرے شہروں کے لیے کورئیر سے بھیجا جاتا ہے۔ باہر کے آرڈر پر روانگی سے پہلے ویڈیو ڈیمو بھی دکھایا جاتا ہے تاکہ آپ مطمئن ہو جائیں۔</p>'};
         }
         if(atHas(text,['پیمنٹ','payment','pay','jazzcash','easypaisa','جیز کیش','ایزی پیسہ','ادائیگی','پیسے'])){
-          return {mood:'happy',clip:'payment',html:'<p>ادائیگی کے طریقے یہ ہیں: <b>JazzCash، Easypaisa، U Paisa اور SadaPay</b>۔ نمبر آرڈر کرتے وقت ایپ میں ہی نظر آ جاتے ہیں۔ چھوٹے آرڈر پر ایڈوانس اس لیے لیا جاتا ہے تاکہ جعلی آرڈر نہ آئیں — آپ کا پیسہ محفوظ رہتا ہے۔</p>'};
+          return {mood:'happy',clip:'payment',queue:['payment'],html:'<p>ادائیگی کے طریقے یہ ہیں: <b>JazzCash، Easypaisa، U Paisa اور SadaPay</b>۔ نمبر آرڈر کرتے وقت ایپ میں ہی نظر آ جاتے ہیں۔ چھوٹے آرڈر پر ایڈوانس اس لیے لیا جاتا ہے تاکہ جعلی آرڈر نہ آئیں — آپ کا پیسہ محفوظ رہتا ہے۔</p>'};
         }
         /* --- Small talk, in the customer's own language --- */
         if(atHas(text,['کیا حال','کیسے ہو','کیا حال ہے','حال چال','kya haal','kaise ho','kaisa hai','how are you','حالك'])){
           if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)&&/how are you/.test(low))
-            return {mood:'happy',clip:'en-howareyou',html:'<p class="at-lat">I am doing great, thank you for asking! Welcome to Asif Traders. Ask me any product\u2019s price, say \u201Cshow me a receiver\u201D, or check your order — I am here to help.</p>'};
+            return {mood:'happy',clip:'en-howareyou',queue:['en-howareyou'],html:'<p class="at-lat">I am doing great, thank you for asking! Welcome to Asif Traders. Ask me any product\u2019s price, say \u201Cshow me a receiver\u201D, or check your order — I am here to help.</p>'};
           if(/[\u0600-\u06FF]/.test(text))
-            return {mood:'happy',clip:'howareyou',html:'<p>الحمدللہ، میں بالکل ٹھیک ہوں، آپ کے پوچھنے کا بہت شکریہ! آپ سنائیں، آپ کیسے ہیں؟ اور بتائیں، آج کس چیز کی مدد کروں — قیمت پوچھنی ہے، کوئی پروڈکٹ دیکھنا ہے، یا آرڈر کی خبر لینی ہے؟</p>'};
+            return {mood:'happy',clip:'howareyou',queue:['howareyou'],html:'<p>الحمدللہ، میں بالکل ٹھیک ہوں، آپ کے پوچھنے کا بہت شکریہ! آپ سنائیں، آپ کیسے ہیں؟ اور بتائیں، آج کس چیز کی مدد کروں — قیمت پوچھنی ہے، کوئی پروڈکٹ دیکھنا ہے، یا آرڈر کی خبر لینی ہے؟</p>'};
           return {mood:'happy',html:'<p class="at-lat">Alhamdulillah, main bilkul theek hoon, poochne ka bohat shukriya! Aap sunayein, aap kaise hain? Aur batayein, aaj kis cheez mein madad karoon — price poochna hai, product dekhna hai, ya order ki khabar leni hai?</p>'};
         }
         if(atHas(text,['شکریہ','thanks','thank you','shukriya','مہربانی'])){
-          if(isLatin(text)&&/thank/.test(low)) return {mood:'happy',clip:'en-thanks',html:'<p class="at-lat">You are most welcome! It is always a pleasure to help. Anything else you would like to ask?</p>'};
-          return {mood:'happy',clip:'thanks',html:'<p>آپ کا بھی بہت شکریہ! آپ کی خدمت کر کے خوشی ہوتی ہے۔ اور کوئی بات پوچھنی ہو تو میں حاضر ہوں۔</p>'};
+          if(isLatin(text)&&/thank/.test(low)) return {mood:'happy',clip:'en-thanks',queue:['en-thanks'],html:'<p class="at-lat">You are most welcome! It is always a pleasure to help. Anything else you would like to ask?</p>'};
+          return {mood:'happy',clip:'thanks',queue:['thanks'],html:'<p>آپ کا بھی بہت شکریہ! آپ کی خدمت کر کے خوشی ہوتی ہے۔ اور کوئی بات پوچھنی ہو تو میں حاضر ہوں۔</p>'};
         }
         if(atHas(text,['اچھے','بہت اچھا','زبردست','great','nice','good bot','پیارے'])){
           return {mood:'happy',html:'<p>آپ کی محبت کا شکریہ! یہی میری کوشش ہے کہ ہر کسٹمر کو ادب اور محبت سے جواب ملے۔ بتائیں، اور کس چیز میں مدد کروں؟</p>'};
         }
         if(atHas(text,['تم کون','آپ کون','who are you','تمہارا نام','your name','نام کیا'])){
-          return {mood:'wave',clip:'whoareyou',html:'<p>میں <b>آصف ٹریڈرز کا مددگار</b> ہوں — اسی دکان کا روبوٹ ساتھی۔ میرا کام ہے آپ کے ہر سوال کا ادب سے جواب دینا: قیمت بتانا، پروڈکٹ سامنے لانا، آرڈر کی خبر دینا، اور دکان کی ہر معلومات دینا۔</p>'};
+          return {mood:'wave',clip:'whoareyou',queue:['whoareyou'],html:'<p>میں <b>آصف ٹریڈرز کا مددگار</b> ہوں — اسی دکان کا روبوٹ ساتھی۔ میرا کام ہے آپ کے ہر سوال کا ادب سے جواب دینا: قیمت بتانا، پروڈکٹ سامنے لانا، آرڈر کی خبر دینا، اور دکان کی ہر معلومات دینا۔</p>'};
         }
         if(atHas(text,['خدا حافظ','bye','اللہ حافظ','goodbye','چلتا ہوں','اجازت'])){
-          return {mood:'wave',clip:'bye',html:'<p>اللہ حافظ! تشریف آوری کا شکریہ۔ جب بھی کوئی چیز چاہیے ہو، میں یہیں ہوں — آصف ٹریڈرز میں آپ کا ہمیشہ خیرمقدم ہے۔</p>'};
+          return {mood:'wave',clip:'bye',queue:['bye'],html:'<p>اللہ حافظ! تشریف آوری کا شکریہ۔ جب بھی کوئی چیز چاہیے ہو، میں یہیں ہوں — آصف ٹریڈرز میں آپ کا ہمیشہ خیرمقدم ہے۔</p>'};
         }
         if(atHas(text,['سلام','salam','salaam','ہیلو','السلام'])||/(^|[\s,!.؟?])(hi|hello|hey)([\s,!.؟?]|$)/i.test(text)){
           if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)&&/^(hi|hello|hey)/.test(low))
-            return {mood:'wave',clip:'en-greeting',html:'<p class="at-lat">Hello and welcome to Asif Traders! I am the shop\u2019s helper. Ask me a price, say \u201Cshow me a product\u201D, or ask about your order — I reply in your own language.</p>'};
-          return {mood:'wave',clip:'greeting',html:'<p>وعلیکم السلام ورحمۃ اللہ وبرکاتہ! آصف ٹریڈرز میں خوش آمدید۔ میں آپ کا مددگار ہوں، بتائیں آج کس چیز کی مدد کروں؟</p>'};
+            return {mood:'wave',clip:'en-greeting',queue:['en-greeting'],html:'<p class="at-lat">Hello and welcome to Asif Traders! I am the shop\u2019s helper. Ask me a price, say \u201Cshow me a product\u201D, or ask about your order — I reply in your own language.</p>'};
+          return {mood:'wave',clip:'greeting',queue:['greeting'],html:'<p>وعلیکم السلام ورحمۃ اللہ وبرکاتہ! آصف ٹریڈرز میں خوش آمدید۔ میں آپ کا مددگار ہوں، بتائیں آج کس چیز کی مدد کروں؟</p>'};
         }
         /* --- Friendly fallback: never rude, never lies --- */
         if(isLatin(text)&&!/[\u0600-\u06FF]/.test(text)){
-          return {mood:'happy',clip:'en-fallback',html:'<p class="at-lat">That is a good question! I can answer anything about this shop — product prices, showing you a product, shop timings, delivery, payment and your order status. And if something is beyond me, I will politely connect you to the shop owner on WhatsApp instead of guessing.</p>'+waButton('Chat on WhatsApp')};
+          return {mood:'happy',clip:'en-fallback',queue:['en-fallback'],html:'<p class="at-lat">That is a good question! I can answer anything about this shop — product prices, showing you a product, shop timings, delivery, payment and your order status. And if something is beyond me, I will politely connect you to the shop owner on WhatsApp instead of guessing.</p>'+waButton('Chat on WhatsApp')};
         }
-        return {mood:'happy',clip:'fallback',html:'<p>جی، میں سن رہا ہوں اور آپ کی بات سمجھنے کی پوری کوشش کرتا ہوں۔ دکان کی ہر چیز میں میں آپ کی مدد کر سکتا ہوں — کسی پروڈکٹ کی <b>قیمت</b> پوچھیں، <b>”ریسیور نکال کر دکھاؤ“</b> کہیں، <b>ٹائمنگ، پتہ، ڈیلیوری</b> یا اپنے <b>آرڈر</b> کی خبر لیں۔ اور جو بات میرے بس سے باہر ہو، اس میں جھوٹ نہیں بولوں گا — ادب سے آپ کو دکاندار سے WhatsApp پر ملا دوں گا۔</p>'+waButton('WhatsApp پر رابطہ کریں')};
+        return {mood:'happy',clip:'fallback',queue:['fallback'],html:'<p>جی، میں سن رہا ہوں اور آپ کی بات سمجھنے کی پوری کوشش کرتا ہوں۔ دکان کی ہر چیز میں میں آپ کی مدد کر سکتا ہوں — کسی پروڈکٹ کی <b>قیمت</b> پوچھیں، <b>”ریسیور نکال کر دکھاؤ“</b> کہیں، <b>ٹائمنگ، پتہ، ڈیلیوری</b> یا اپنے <b>آرڈر</b> کی خبر لیں۔ اور جو بات میرے بس سے باہر ہو، اس میں جھوٹ نہیں بولوں گا — ادب سے آپ کو دکاندار سے WhatsApp پر ملا دوں گا۔</p>'+waButton('WhatsApp پر رابطہ کریں')};
       }
       function send(text){
         text=(text||'').trim();
@@ -4203,7 +4219,7 @@ let reviewStars = 5;
           addBot(reply.html,reply.mood);
           if(reply.mood==='sorry') setBotState('sorry');
           if(reply.mood==='wave') setBotState('waving');
-          speakReply(reply.html,reply.mood,reply.clip);
+          speakReply(reply);
           busy=false;
           input.focus({preventScroll:true});
         });
@@ -4270,122 +4286,104 @@ let reviewStars = 5;
          voices whose gender cannot be verified are all skipped. If the phone
          has no male voice for that language, the bot stays silent and answers
          in writing only — it never falls back to the phone's default voice. */
-      var MALE_HINTS=['male','david','mark','daniel','george','james','richard','michael','robert','john','ravi','hemant','madhur','prabhat','kunal','arjun','asad','salim','naayf','majed','hamed','tarik','tariq','abdullah','khalid','fahad','bilal','usman','imran','pablo','jorge','carlos','miguel','diego','javier','alejandro','thomas','paul','guy','christopher','eric','roger','aaron','ryan','william','andrew','brian','matthew','justin','brandon','kevin','jason','ahmed','mohammad','muhammad','hassan','hussain','omar','yusuf','ibrahim','stefan','steffan','hans','pierre','jean','francesco','marco','giuseppe','alessandro','ivan','dmitri','alexei','nikolai','kenji','hiroshi','keita','fred','ralph','albert','bruce','alex','arthur','callum','emre','ahmet','injoon','yunjian','yunyang','yunhao','kangkang','zhiwei','naoki'];
-      var FEMALE_HINTS=['female','woman','zira','samantha','victoria','susan','catherine','katherine','kate','linda','heera','kalpana','fatima','amira','laila','leila','layla','salma','maryam','aisha','ayesha','zainab','mahira','veena','lekha','priya','aditi','raveena','swara','neerja','shruti','ananya','pooja','kajal','sunita','geeta','karen','moira','tessa','fiona','serena','allison','ava','emma','aria','jenny','michelle','ashley','ana','cora','elizabeth','joana','lucia','helena','laura','sofia','sofía','sabina','elvira','paulina','monica','carmen','conchita','penelope','marisol','paloma','dalia','ines','inés','yelda','filiz','sevim','hulya','elif','aurelie','aurélie','amelie','amélie','virginie','hortense','denise','josephine','celine','julie','katja','anna','petra','marlene','hedda','natalia','tatiana','ekaterina','olga','irina','svetlana','oksana','milena','zofia','ewa','maja','hannah','elsa','isabella','francisca','raquel','fernanda','camila','kyoko','haruka','ayumi','nanami','aoi','mayu','shiori','tingting','yuna','sunhi','seoyeon','noura','hala','zariyah','reem','xiaoxiao','xiaoyi','xiaohan','xiaomeng','xiaoyan','xiaozhen','mei-jia','sin-ji'];
-      function voiceTokens(v){ var raw=((v.name||'')+' '+(v.voiceURI||'')).toLowerCase(); return ' '+raw.replace(/[^a-z\u00C0-\u024F]+/g,' ').replace(/\s+/g,' ').trim()+' '; }
-      function nameHas(n,hint){ var h=hint.toLowerCase().replace(/[^a-z\u00C0-\u024F]+/g,' ').replace(/\s+/g,' ').trim(); return n.indexOf(' '+h+' ')!==-1; }
-      function isFemaleVoice(v){ var n=voiceTokens(v); for(var i=0;i<FEMALE_HINTS.length;i++){ if(nameHas(n,FEMALE_HINTS[i])) return true; } return false; }
-      function isMaleVoice(v){ if(isFemaleVoice(v)) return false; var n=voiceTokens(v); for(var i=0;i<MALE_HINTS.length;i++){ if(nameHas(n,MALE_HINTS[i])) return true; } return false; }
-      function pickMaleVoice(lang){
-        var voices=[]; try{ voices=window.speechSynthesis.getVoices()||[]; }catch(e){}
-        if(!voices.length) return null;
-        var want=(lang||'').replace('_','-').toLowerCase(); var wantBase=want.split('-')[0];
-        function langScore(v){ var vl=(v.lang||'').replace('_','-').toLowerCase(); if(vl===want) return 60; if(vl.indexOf(want)===0) return 45; if(vl.split('-')[0]===wantBase) return 30; return 0; }
-        var best=null,bestScore=0;
-        for(var i=0;i<voices.length;i++){ var v=voices[i]; if(!isMaleVoice(v)) continue; var s=langScore(v); if(s>bestScore){ bestScore=s; best=v; } }
-        return best;
-      }
-      var speakTimer=null,voiceWarned=false,noMaleWarned=false;
-      /* Voice-failure notes, in the reply's own language — shown in the chat
-         status line (atToast stays a no-op by design; no toast card). */
+      /* RECORDED AUDIO ONLY — no phone TTS anywhere in this chatbot.
+         Every spoken reply comes from a pre-recorded male-voice clip
+         (RECORDED map below). If a reply has no recorded clip, the bot
+         stays silent, answers in writing, and shows a voice note in
+         the reply's own language (VOICE_NOTE 'noVoice' / 'partial').
+         A female voice can never play, because no TTS voice is ever
+         selected or spoken. SpeechRecognition (mic INPUT) is untouched. */
+      /* Voice notes, in the reply's own language — shown in the chat status
+         line (atToast stays a no-op by design; no toast card). 'noVoice' means
+         this reply has no recorded voice yet; 'partial' means only the lead
+         clip played and the rest (e.g. offer details) is written below. */
       var VOICE_NOTE={
-        'ur-PK':{noSpeech:'اس فون یا براؤزر میں بولنے کی سہولت موجود نہیں ہے — جواب صرف لکھ کر آئے گا۔',noMale:'اس فون میں اس زبان کی مردانہ آواز نہیں ہے — عورت کی آواز بالکل نہیں چلے گی، اس لیے جواب صرف لکھ کر دیا گیا ہے۔',failed:'فون کی آواز نہیں چل سکی — فون کا والیوم چیک کر لیں، جواب لکھ کر آ گیا ہے۔'},
-        'fa-IR':{noSpeech:'در این گوشی یا مرورگر امکان صحبت کردن نیست — پاسخ فقط به صورت نوشته آمده است۔',noMale:'در این گوشی صدای مردانه‌ای برای این زبان نیست — صدای زنانه هرگز پخش نمی‌شود، پس پاسخ فقط به صورت نوشته آمده است۔',failed:'صدای گوشی پخش نشد — بلندی صدا را بررسی کنید، پاسخ به صورت نوشته آمده است۔'},
-        'ps-AF':{noSpeech:'په دې تلیفون یا براوزر کې د خبرو کولو اسانتیا نشته — ځواب یوازې په لیکلي بڼه راغلی دی.',noMale:'په دې تلیفون کې د دې ژبې نارینه غږ نشته — ښځینه غږ به هېڅکله نه غږېږي، نو ځواب یوازې په لیکلي بڼه راغلی دی.',failed:'د تلیفون غږ ونه چلېد — آواز وګورئ، ځواب په لیکلي بڼه راغلی دی.'},
-        'en-US':{noSpeech:'This phone or browser cannot speak — the reply is written only.',noMale:'This phone has no male voice for this language — a female voice will never play, so the reply is written only.',failed:'The phone audio did not play — check the volume; the reply is written here.'},
-        'ar-SA':{noSpeech:'لا يمكن لهذا الهاتف أو المتصفح التحدث — الرد مكتوب فقط.',noMale:'لا يوجد صوت رجالي لهذه اللغة على هذا الهاتف — لن يُشغَّل صوت نسائي أبداً، لذا الرد مكتوب فقط.',failed:'تعذّر تشغيل صوت الهاتف — تحقق من مستوى الصوت؛ الرد مكتوب هنا.'},
-        'sd-PK':{noSpeech:'هن فون يا براوزر ۾ ڳالهائڻ جي سهولت ناهي — جواب صرف لکيل آهي.',noMale:'هن فون ۾ هن ٻوليءَ لاءِ مرداڻو آواز ناهي — عورت جو آواز ڪڏهن به نه هلندو، تنهنڪري جواب صرف لکيل آهي.',failed:'فون جو آواز نه هليو — ووليم چيڪ ڪريو، جواب لکيل آهي.'},
-        'pa-PK':{noSpeech:'اس فون یا براؤزر وچ بولن دی سہولت نہیں اے — جواب صرف لکھ کے آئے گا۔',noMale:'اس فون وچ اس زبان دی مردانہ آواز نہیں اے — عورت دی آواز کدے نہیں چلے گی، اس لئی جواب صرف لکھ کے دتا گیا اے۔',failed:'فون دی آواز نہیں چلی — والیوم چیک کر لو، جواب لکھ کے آ گیا اے۔'}
+        'ur-PK':{noSpeech:'اس فون یا براؤزر میں بولنے کی سہولت موجود نہیں ہے — جواب صرف لکھ کر آئے گا۔',noMale:'اس فون میں اس زبان کی مردانہ آواز نہیں ہے — عورت کی آواز بالکل نہیں چلے گی، اس لیے جواب صرف لکھ کر دیا گیا ہے۔',failed:'فون کی آواز نہیں چل سکی — فون کا والیوم چیک کر لیں، جواب لکھ کر آ گیا ہے۔',noVoice:'اس جواب کی ریکارڈ شدہ آواز ابھی موجود نہیں ہے — جواب نیچے لکھ کر آ گیا ہے۔',partial:'آفر کی تفصیل نیچے لکھ کر آ گئی ہے۔'},
+        'fa-IR':{noSpeech:'در این گوشی یا مرورگر امکان صحبت کردن نیست — پاسخ فقط به صورت نوشته آمده است۔',noMale:'در این گوشی صدای مردانه‌ای برای این زبان نیست — صدای زنانه هرگز پخش نمی‌شود، پس پاسخ فقط به صورت نوشته آمده است۔',failed:'صدای گوشی پخش نشد — بلندی صدا را بررسی کنید، پاسخ به صورت نوشته آمده است۔',noVoice:'برای این پاسخ هنوز صدای ضبط‌شده‌ای نیست — پاسخ در زیر به صورت نوشته آمده است۔',partial:'جزئیات پیشنهاد در زیر نوشته شده است۔'},
+        'ps-AF':{noSpeech:'په دې تلیفون یا براوزر کې د خبرو کولو اسانتیا نشته — ځواب یوازې په لیکلي بڼه راغلی دی.',noMale:'په دې تلیفون کې د دې ژبې نارینه غږ نشته — ښځینه غږ به هېڅکله نه غږېږي، نو ځواب یوازې په لیکلي بڼه راغلی دی.',failed:'د تلیفون غږ ونه چلېد — آواز وګورئ، ځواب په لیکلي بڼه راغلی دی.',noVoice:'د دې ځواب لپاره تر اوسه ثبت شوی غږ نشته — ځواب لاندې په لیکلي بڼه راغلی دی.',partial:'د وړاندیز جزییات لاندې لیکلي دي.'},
+        'en-US':{noSpeech:'This phone or browser cannot speak — the reply is written only.',noMale:'This phone has no male voice for this language — a female voice will never play, so the reply is written only.',failed:'The phone audio did not play — check the volume; the reply is written here.',noVoice:'This reply has no recorded voice yet — the answer is written below.',partial:'The offer details are written below.'},
+        'ar-SA':{noSpeech:'لا يمكن لهذا الهاتف أو المتصفح التحدث — الرد مكتوب فقط.',noMale:'لا يوجد صوت رجالي لهذه اللغة على هذا الهاتف — لن يُشغَّل صوت نسائي أبداً، لذا الرد مكتوب فقط.',failed:'تعذّر تشغيل صوت الهاتف — تحقق من مستوى الصوت؛ الرد مكتوب هنا.',noVoice:'لا يوجد صوت مسجَّل لهذا الرد بعد — الرد مكتوب أدناه.',partial:'تفاصيل العرض مكتوبة أدناه.'},
+        'sd-PK':{noSpeech:'هن فون يا براوزر ۾ ڳالهائڻ جي سهولت ناهي — جواب صرف لکيل آهي.',noMale:'هن فون ۾ هن ٻوليءَ لاءِ مرداڻو آواز ناهي — عورت جو آواز ڪڏهن به نه هلندو، تنهنڪري جواب صرف لکيل آهي.',failed:'فون جو آواز نه هليو — ووليم چيڪ ڪريو، جواب لکيل آهي.',noVoice:'هن جواب جو رڪارڊ ٿيل آواز اڃا موجود ناهي — جواب هيٺ لکيل آهي.',partial:'آفر جا تفصيل هيٺ لکيل آهن.'},
+        'pa-PK':{noSpeech:'اس فون یا براؤزر وچ بولن دی سہولت نہیں اے — جواب صرف لکھ کے آئے گا۔',noMale:'اس فون وچ اس زبان دی مردانہ آواز نہیں اے — عورت دی آواز کدے نہیں چلے گی، اس لئی جواب صرف لکھ کے دتا گیا اے۔',failed:'فون دی آواز نہیں چلی — والیوم چیک کر لو، جواب لکھ کے آ گیا اے۔',noVoice:'اس جواب دی ریکارڈ شدہ آواز ہلے موجود نہیں اے — جواب تھلے لکھ کے آ گیا اے۔',partial:'آفر دی تفصیل تھلے لکھ کے آ گئی اے۔'}
       };
-      function voiceNote(lang,kind){ var m=VOICE_NOTE[lang]||VOICE_NOTE['ur-PK']; return m[kind]||m.noMale; }
+      function voiceNote(lang,kind){ var m=VOICE_NOTE[lang]||VOICE_NOTE['ur-PK']; return m[kind]||m.noVoice; }
       var voiceNoteTimer=null;
       function showVoiceNote(lang,kind){ setStatus(voiceNote(lang,kind)); clearTimeout(voiceNoteTimer); voiceNoteTimer=setTimeout(function(){ setStatusDefault(); },7000); }
-      function speakText(text,mood,retried){
-        if(!voiceOn||!text) return false;
-        if(!('speechSynthesis' in window)){
-          if(!voiceWarned){ voiceWarned=true; showVoiceNote(atReplyLang||replyLang(text),'noSpeech'); }
-          return false;
-        }
-        try{
-          var loaded=[]; try{ loaded=window.speechSynthesis.getVoices()||[]; }catch(e){}
-          if(!loaded.length&&!retried){ setTimeout(function(){ speakText(text,mood,true); },350); return true; }
-          var lang=atReplyLang||replyLang(text); atReplyLang=null;
-          var mv=pickMaleVoice(lang);
-          if(!mv){
-            setBotState(mood==='sorry'?'sorry':'idle');
-            if(!noMaleWarned){ noMaleWarned=true; showVoiceNote(lang,'noMale'); }
-            return 'no-male';
-          }
-          var u=new SpeechSynthesisUtterance(text);
-          u.voice=mv; u.lang=mv.lang||lang; u.rate=0.96; u.pitch=0.85;
-          u.onstart=function(){ if(mood!=='sorry'){ setBotState('talking'); } setStatus('جواب بول کر سنا رہا ہوں…'); };
-          u.onend=function(){ setBotState(mood==='sorry'?'sorry':'idle'); setStatusDefault(); };
-          u.onerror=function(ev){ setBotState(mood==='sorry'?'sorry':'idle'); setStatusDefault(); if(ev&&ev.error&&ev.error!=='interrupted'&&ev.error!=='canceled'&&!voiceWarned){ voiceWarned=true; showVoiceNote(u.lang||lang,'failed'); } };
-          var doSpeak=function(){ try{ window.speechSynthesis.resume(); window.speechSynthesis.speak(u); pulseTalking(text); }catch(e){} };
-          clearTimeout(speakTimer);
-          if(window.speechSynthesis.speaking||window.speechSynthesis.pending){ try{ window.speechSynthesis.cancel(); }catch(e){} speakTimer=setTimeout(doSpeak,200); }
-          else { doSpeak(); }
-          return true;
-        }catch(e){ return false; }
-      }
       /* Pre-recorded MALE voice for the common answers — recorded once in a
          man's voice. Clips live in voice/*.mp3 and load ON DEMAND when the bot
          speaks, so the page itself stays small and opens fast. */
-      var RECORDED={"greeting":"voice/greeting.mp3","howareyou":"voice/howareyou.mp3","offer":"voice/offer.mp3","timing":"voice/timing.mp3","address":"voice/address.mp3","delivery":"voice/delivery.mp3","payment":"voice/payment.mp3","tracking":"voice/tracking.mp3","privacy":"voice/privacy.mp3","show-products":"voice/show-products.mp3","show-premium":"voice/show-premium.mp3","show-android":"voice/show-android.mp3","fa-greeting":"voice/fa-greeting.mp3","fa-howareyou":"voice/fa-howareyou.mp3","fa-price":"voice/fa-price.mp3","fa-timing":"voice/fa-timing.mp3","fa-address":"voice/fa-address.mp3","fa-delivery":"voice/fa-delivery.mp3","fa-payment":"voice/fa-payment.mp3","fa-tracking":"voice/fa-tracking.mp3","fa-privacy":"voice/fa-privacy.mp3","fa-show":"voice/fa-show.mp3","ps-greeting":"voice/ps-greeting.mp3","ps-howareyou":"voice/ps-howareyou.mp3","ps-price":"voice/ps-price.mp3","ps-timing":"voice/ps-timing.mp3","ps-address":"voice/ps-address.mp3","ps-delivery":"voice/ps-delivery.mp3","ps-payment":"voice/ps-payment.mp3","ps-tracking":"voice/ps-tracking.mp3","ps-privacy":"voice/ps-privacy.mp3","ps-show":"voice/ps-show.mp3","priceask":"voice/priceask.mp3","thanks":"voice/thanks.mp3","whoareyou":"voice/whoareyou.mp3","bye":"voice/bye.mp3","fallback":"voice/fallback.mp3","fa-pricelead":"voice/fa-pricelead.mp3","fa-showlead":"voice/fa-showlead.mp3","fa-thanks":"voice/fa-thanks.mp3","fa-fallback":"voice/fa-fallback.mp3","ps-pricelead":"voice/ps-pricelead.mp3","ps-showlead":"voice/ps-showlead.mp3","ps-thanks":"voice/ps-thanks.mp3","ps-fallback":"voice/ps-fallback.mp3","en-greeting":"voice/en-greeting.mp3","en-howareyou":"voice/en-howareyou.mp3","en-price":"voice/en-price.mp3","en-pricelead":"voice/en-pricelead.mp3","en-timing":"voice/en-timing.mp3","en-address":"voice/en-address.mp3","en-delivery":"voice/en-delivery.mp3","en-payment":"voice/en-payment.mp3","en-tracking":"voice/en-tracking.mp3","en-privacy":"voice/en-privacy.mp3","en-show":"voice/en-show.mp3","en-showlead":"voice/en-showlead.mp3","en-thanks":"voice/en-thanks.mp3","en-fallback":"voice/en-fallback.mp3","pa-greeting":"voice/pa-greeting.mp3","pa-howareyou":"voice/pa-howareyou.mp3","pa-price":"voice/pa-price.mp3","pa-pricelead":"voice/pa-pricelead.mp3","pa-timing":"voice/pa-timing.mp3","pa-address":"voice/pa-address.mp3","pa-delivery":"voice/pa-delivery.mp3","pa-payment":"voice/pa-payment.mp3","pa-tracking":"voice/pa-tracking.mp3","pa-privacy":"voice/pa-privacy.mp3","pa-show":"voice/pa-show.mp3","pa-showlead":"voice/pa-showlead.mp3","pa-thanks":"voice/pa-thanks.mp3","pa-fallback":"voice/pa-fallback.mp3","sd-greeting":"voice/sd-greeting.mp3","sd-howareyou":"voice/sd-howareyou.mp3","sd-price":"voice/sd-price.mp3","sd-pricelead":"voice/sd-pricelead.mp3","sd-timing":"voice/sd-timing.mp3","sd-address":"voice/sd-address.mp3","sd-delivery":"voice/sd-delivery.mp3","sd-payment":"voice/sd-payment.mp3","sd-tracking":"voice/sd-tracking.mp3","sd-privacy":"voice/sd-privacy.mp3","sd-show":"voice/sd-show.mp3","sd-showlead":"voice/sd-showlead.mp3","sd-thanks":"voice/sd-thanks.mp3","sd-fallback":"voice/sd-fallback.mp3","ar-greeting":"voice/ar-greeting.mp3","ar-howareyou":"voice/ar-howareyou.mp3","ar-price":"voice/ar-price.mp3","ar-pricelead":"voice/ar-pricelead.mp3","ar-timing":"voice/ar-timing.mp3","ar-address":"voice/ar-address.mp3","ar-delivery":"voice/ar-delivery.mp3","ar-payment":"voice/ar-payment.mp3","ar-tracking":"voice/ar-tracking.mp3","ar-privacy":"voice/ar-privacy.mp3","ar-show":"voice/ar-show.mp3","ar-showlead":"voice/ar-showlead.mp3","ar-thanks":"voice/ar-thanks.mp3","ar-fallback":"voice/ar-fallback.mp3","fa-offer":"voice/fa-offer.mp3","fa-whoareyou":"voice/fa-whoareyou.mp3","fa-bye":"voice/fa-bye.mp3","ps-offer":"voice/ps-offer.mp3","ps-whoareyou":"voice/ps-whoareyou.mp3","ps-bye":"voice/ps-bye.mp3","en-offer":"voice/en-offer.mp3","en-whoareyou":"voice/en-whoareyou.mp3","en-bye":"voice/en-bye.mp3","pa-offer":"voice/pa-offer.mp3","pa-whoareyou":"voice/pa-whoareyou.mp3","pa-bye":"voice/pa-bye.mp3","sd-offer":"voice/sd-offer.mp3","sd-whoareyou":"voice/sd-whoareyou.mp3","sd-bye":"voice/sd-bye.mp3","ar-offer":"voice/ar-offer.mp3","ar-whoareyou":"voice/ar-whoareyou.mp3","ar-bye":"voice/ar-bye.mp3"};
+      var RECORDED={"greeting":"voice/greeting.mp3","howareyou":"voice/howareyou.mp3","offer":"voice/offer.mp3","timing":"voice/timing.mp3","address":"voice/address.mp3","delivery":"voice/delivery.mp3","payment":"voice/payment.mp3","tracking":"voice/tracking.mp3","privacy":"voice/privacy.mp3","show-products":"voice/show-products.mp3","show-premium":"voice/show-premium.mp3","show-android":"voice/show-android.mp3","fa-greeting":"voice/fa-greeting.mp3","fa-howareyou":"voice/fa-howareyou.mp3","fa-price":"voice/fa-price.mp3","fa-timing":"voice/fa-timing.mp3","fa-address":"voice/fa-address.mp3","fa-delivery":"voice/fa-delivery.mp3","fa-payment":"voice/fa-payment.mp3","fa-tracking":"voice/fa-tracking.mp3","fa-privacy":"voice/fa-privacy.mp3","fa-show":"voice/fa-show.mp3","ps-greeting":"voice/ps-greeting.mp3","ps-howareyou":"voice/ps-howareyou.mp3","ps-price":"voice/ps-price.mp3","ps-timing":"voice/ps-timing.mp3","ps-address":"voice/ps-address.mp3","ps-delivery":"voice/ps-delivery.mp3","ps-payment":"voice/ps-payment.mp3","ps-tracking":"voice/ps-tracking.mp3","ps-privacy":"voice/ps-privacy.mp3","ps-show":"voice/ps-show.mp3","priceask":"voice/priceask.mp3","thanks":"voice/thanks.mp3","whoareyou":"voice/whoareyou.mp3","bye":"voice/bye.mp3","fallback":"voice/fallback.mp3","fa-pricelead":"voice/fa-pricelead.mp3","fa-showlead":"voice/fa-showlead.mp3","fa-thanks":"voice/fa-thanks.mp3","fa-fallback":"voice/fa-fallback.mp3","ps-pricelead":"voice/ps-pricelead.mp3","ps-showlead":"voice/ps-showlead.mp3","ps-thanks":"voice/ps-thanks.mp3","ps-fallback":"voice/ps-fallback.mp3","en-greeting":"voice/en-greeting.mp3","en-howareyou":"voice/en-howareyou.mp3","en-price":"voice/en-price.mp3","en-pricelead":"voice/en-pricelead.mp3","en-timing":"voice/en-timing.mp3","en-address":"voice/en-address.mp3","en-delivery":"voice/en-delivery.mp3","en-payment":"voice/en-payment.mp3","en-tracking":"voice/en-tracking.mp3","en-privacy":"voice/en-privacy.mp3","en-show":"voice/en-show.mp3","en-showlead":"voice/en-showlead.mp3","en-thanks":"voice/en-thanks.mp3","en-fallback":"voice/en-fallback.mp3","pa-greeting":"voice/pa-greeting.mp3","pa-howareyou":"voice/pa-howareyou.mp3","pa-price":"voice/pa-price.mp3","pa-pricelead":"voice/pa-pricelead.mp3","pa-timing":"voice/pa-timing.mp3","pa-address":"voice/pa-address.mp3","pa-delivery":"voice/pa-delivery.mp3","pa-payment":"voice/pa-payment.mp3","pa-tracking":"voice/pa-tracking.mp3","pa-privacy":"voice/pa-privacy.mp3","pa-show":"voice/pa-show.mp3","pa-showlead":"voice/pa-showlead.mp3","pa-thanks":"voice/pa-thanks.mp3","pa-fallback":"voice/pa-fallback.mp3","sd-greeting":"voice/sd-greeting.mp3","sd-howareyou":"voice/sd-howareyou.mp3","sd-price":"voice/sd-price.mp3","sd-pricelead":"voice/sd-pricelead.mp3","sd-timing":"voice/sd-timing.mp3","sd-address":"voice/sd-address.mp3","sd-delivery":"voice/sd-delivery.mp3","sd-payment":"voice/sd-payment.mp3","sd-tracking":"voice/sd-tracking.mp3","sd-privacy":"voice/sd-privacy.mp3","sd-show":"voice/sd-show.mp3","sd-showlead":"voice/sd-showlead.mp3","sd-thanks":"voice/sd-thanks.mp3","sd-fallback":"voice/sd-fallback.mp3","ar-greeting":"voice/ar-greeting.mp3","ar-howareyou":"voice/ar-howareyou.mp3","ar-price":"voice/ar-price.mp3","ar-pricelead":"voice/ar-pricelead.mp3","ar-timing":"voice/ar-timing.mp3","ar-address":"voice/ar-address.mp3","ar-delivery":"voice/ar-delivery.mp3","ar-payment":"voice/ar-payment.mp3","ar-tracking":"voice/ar-tracking.mp3","ar-privacy":"voice/ar-privacy.mp3","ar-show":"voice/ar-show.mp3","ar-showlead":"voice/ar-showlead.mp3","ar-thanks":"voice/ar-thanks.mp3","ar-fallback":"voice/ar-fallback.mp3","fa-offer":"voice/fa-offer.mp3","fa-whoareyou":"voice/fa-whoareyou.mp3","fa-bye":"voice/fa-bye.mp3","ps-offer":"voice/ps-offer.mp3","ps-whoareyou":"voice/ps-whoareyou.mp3","ps-bye":"voice/ps-bye.mp3","en-offer":"voice/en-offer.mp3","en-whoareyou":"voice/en-whoareyou.mp3","en-bye":"voice/en-bye.mp3","pa-offer":"voice/pa-offer.mp3","pa-whoareyou":"voice/pa-whoareyou.mp3","pa-bye":"voice/pa-bye.mp3","sd-offer":"voice/sd-offer.mp3","sd-whoareyou":"voice/sd-whoareyou.mp3","sd-bye":"voice/sd-bye.mp3","ar-offer":"voice/ar-offer.mp3","ar-whoareyou":"voice/ar-whoareyou.mp3","ar-bye":"voice/ar-bye.mp3","pp-ur-1":"voice/pp-ur-1.mp3","pp-ur-2":"voice/pp-ur-2.mp3","pp-ur-3":"voice/pp-ur-3.mp3","pp-ur-4":"voice/pp-ur-4.mp3","pp-ur-5":"voice/pp-ur-5.mp3","pp-ur-6":"voice/pp-ur-6.mp3","pp-ur-7":"voice/pp-ur-7.mp3","pp-ur-8":"voice/pp-ur-8.mp3","pp-ur-9":"voice/pp-ur-9.mp3","pp-ur-10":"voice/pp-ur-10.mp3","pp-ur-11":"voice/pp-ur-11.mp3","pp-ur-12":"voice/pp-ur-12.mp3","pp-ur-13":"voice/pp-ur-13.mp3","pp-ur-14":"voice/pp-ur-14.mp3","pp-ur-15":"voice/pp-ur-15.mp3","pp-ur-16":"voice/pp-ur-16.mp3","pp-ur-17":"voice/pp-ur-17.mp3","pp-ur-18":"voice/pp-ur-18.mp3","pp-ur-19":"voice/pp-ur-19.mp3","pp-ur-20":"voice/pp-ur-20.mp3","pp-ur-21":"voice/pp-ur-21.mp3","pp-ur-22":"voice/pp-ur-22.mp3","pp-ur-23":"voice/pp-ur-23.mp3","pp-ur-24":"voice/pp-ur-24.mp3","pp-ur-25":"voice/pp-ur-25.mp3","pp-ur-26":"voice/pp-ur-26.mp3","pp-ur-27":"voice/pp-ur-27.mp3","pp-ur-28":"voice/pp-ur-28.mp3","pp-ur-29":"voice/pp-ur-29.mp3","pp-ur-30":"voice/pp-ur-30.mp3","pp-ur-31":"voice/pp-ur-31.mp3","pp-ur-32":"voice/pp-ur-32.mp3","pp-ur-33":"voice/pp-ur-33.mp3","pp-ur-34":"voice/pp-ur-34.mp3","pp-ur-35":"voice/pp-ur-35.mp3","pp-ur-36":"voice/pp-ur-36.mp3","pp-ur-37":"voice/pp-ur-37.mp3","pp-ur-38":"voice/pp-ur-38.mp3","pp-ur-39":"voice/pp-ur-39.mp3","pp-ur-40":"voice/pp-ur-40.mp3","pp-ur-41":"voice/pp-ur-41.mp3","pp-ur-42":"voice/pp-ur-42.mp3","pp-ur-43":"voice/pp-ur-43.mp3","pp-ur-44":"voice/pp-ur-44.mp3","pp-en-1":"voice/pp-en-1.mp3","pp-en-2":"voice/pp-en-2.mp3","pp-en-3":"voice/pp-en-3.mp3","pp-en-4":"voice/pp-en-4.mp3","pp-en-5":"voice/pp-en-5.mp3","pp-en-6":"voice/pp-en-6.mp3","pp-en-7":"voice/pp-en-7.mp3","pp-en-8":"voice/pp-en-8.mp3","pp-en-9":"voice/pp-en-9.mp3","pp-en-10":"voice/pp-en-10.mp3","pp-en-11":"voice/pp-en-11.mp3","pp-en-12":"voice/pp-en-12.mp3","pp-en-13":"voice/pp-en-13.mp3","pp-en-14":"voice/pp-en-14.mp3","pp-en-15":"voice/pp-en-15.mp3","pp-en-16":"voice/pp-en-16.mp3","pp-en-17":"voice/pp-en-17.mp3","pp-en-18":"voice/pp-en-18.mp3","pp-en-19":"voice/pp-en-19.mp3","pp-en-20":"voice/pp-en-20.mp3","pp-en-21":"voice/pp-en-21.mp3","pp-en-22":"voice/pp-en-22.mp3","pp-en-23":"voice/pp-en-23.mp3","pp-en-24":"voice/pp-en-24.mp3","pp-en-25":"voice/pp-en-25.mp3","pp-en-26":"voice/pp-en-26.mp3","pp-en-27":"voice/pp-en-27.mp3","pp-en-28":"voice/pp-en-28.mp3","pp-en-29":"voice/pp-en-29.mp3","pp-en-30":"voice/pp-en-30.mp3","pp-en-31":"voice/pp-en-31.mp3","pp-en-32":"voice/pp-en-32.mp3","pp-en-33":"voice/pp-en-33.mp3","pp-en-34":"voice/pp-en-34.mp3","pp-en-35":"voice/pp-en-35.mp3","pp-en-36":"voice/pp-en-36.mp3","pp-en-37":"voice/pp-en-37.mp3","pp-en-38":"voice/pp-en-38.mp3","pp-en-39":"voice/pp-en-39.mp3","pp-en-40":"voice/pp-en-40.mp3","pp-en-41":"voice/pp-en-41.mp3","pp-en-42":"voice/pp-en-42.mp3","pp-en-43":"voice/pp-en-43.mp3","pp-en-44":"voice/pp-en-44.mp3","pp-fa-1":"voice/pp-fa-1.mp3","pp-fa-2":"voice/pp-fa-2.mp3","pp-fa-3":"voice/pp-fa-3.mp3","pp-fa-4":"voice/pp-fa-4.mp3","pp-fa-5":"voice/pp-fa-5.mp3","pp-fa-6":"voice/pp-fa-6.mp3","pp-fa-7":"voice/pp-fa-7.mp3","pp-fa-8":"voice/pp-fa-8.mp3","pp-fa-9":"voice/pp-fa-9.mp3","pp-fa-10":"voice/pp-fa-10.mp3","pp-fa-11":"voice/pp-fa-11.mp3","pp-fa-12":"voice/pp-fa-12.mp3","pp-fa-13":"voice/pp-fa-13.mp3","pp-fa-14":"voice/pp-fa-14.mp3","pp-fa-15":"voice/pp-fa-15.mp3","pp-fa-16":"voice/pp-fa-16.mp3","pp-fa-17":"voice/pp-fa-17.mp3","pp-fa-18":"voice/pp-fa-18.mp3","pp-fa-19":"voice/pp-fa-19.mp3","pp-fa-20":"voice/pp-fa-20.mp3","pp-fa-21":"voice/pp-fa-21.mp3","pp-fa-22":"voice/pp-fa-22.mp3","pp-fa-23":"voice/pp-fa-23.mp3","pp-fa-24":"voice/pp-fa-24.mp3","pp-fa-25":"voice/pp-fa-25.mp3","pp-fa-26":"voice/pp-fa-26.mp3","pp-fa-27":"voice/pp-fa-27.mp3","pp-fa-28":"voice/pp-fa-28.mp3","pp-fa-29":"voice/pp-fa-29.mp3","pp-fa-30":"voice/pp-fa-30.mp3","pp-fa-31":"voice/pp-fa-31.mp3","pp-fa-32":"voice/pp-fa-32.mp3","pp-fa-33":"voice/pp-fa-33.mp3","pp-fa-34":"voice/pp-fa-34.mp3","pp-fa-35":"voice/pp-fa-35.mp3","pp-fa-36":"voice/pp-fa-36.mp3","pp-fa-37":"voice/pp-fa-37.mp3","pp-fa-38":"voice/pp-fa-38.mp3","pp-fa-39":"voice/pp-fa-39.mp3","pp-fa-40":"voice/pp-fa-40.mp3","pp-fa-41":"voice/pp-fa-41.mp3","pp-fa-42":"voice/pp-fa-42.mp3","pp-fa-43":"voice/pp-fa-43.mp3","pp-fa-44":"voice/pp-fa-44.mp3","pp-ps-1":"voice/pp-ps-1.mp3","pp-ps-2":"voice/pp-ps-2.mp3","pp-ps-3":"voice/pp-ps-3.mp3","pp-ps-5":"voice/pp-ps-5.mp3","pp-ps-6":"voice/pp-ps-6.mp3","pp-ps-7":"voice/pp-ps-7.mp3","pp-ps-8":"voice/pp-ps-8.mp3","pp-ps-10":"voice/pp-ps-10.mp3","pp-ps-12":"voice/pp-ps-12.mp3","pp-ps-13":"voice/pp-ps-13.mp3","pp-ps-15":"voice/pp-ps-15.mp3","pp-ps-16":"voice/pp-ps-16.mp3","pp-ps-17":"voice/pp-ps-17.mp3","pp-ps-18":"voice/pp-ps-18.mp3","pp-ps-20":"voice/pp-ps-20.mp3","pp-ps-21":"voice/pp-ps-21.mp3","pp-ps-23":"voice/pp-ps-23.mp3","pp-ps-24":"voice/pp-ps-24.mp3","pp-ps-25":"voice/pp-ps-25.mp3","pp-ps-26":"voice/pp-ps-26.mp3","pp-ps-27":"voice/pp-ps-27.mp3","pp-ps-30":"voice/pp-ps-30.mp3","pp-ps-31":"voice/pp-ps-31.mp3","pp-ps-32":"voice/pp-ps-32.mp3","pp-ps-33":"voice/pp-ps-33.mp3","pp-ps-35":"voice/pp-ps-35.mp3","pp-ps-36":"voice/pp-ps-36.mp3","pp-ps-37":"voice/pp-ps-37.mp3","pp-ps-38":"voice/pp-ps-38.mp3","pp-ps-39":"voice/pp-ps-39.mp3","pp-ps-40":"voice/pp-ps-40.mp3","pp-ps-41":"voice/pp-ps-41.mp3","pp-ps-42":"voice/pp-ps-42.mp3","pp-ps-44":"voice/pp-ps-44.mp3","pp-pa-1":"voice/pp-pa-1.mp3","pp-pa-2":"voice/pp-pa-2.mp3","pp-pa-3":"voice/pp-pa-3.mp3","pp-pa-4":"voice/pp-pa-4.mp3","pp-pa-5":"voice/pp-pa-5.mp3","pp-pa-6":"voice/pp-pa-6.mp3","pp-pa-7":"voice/pp-pa-7.mp3","pp-pa-8":"voice/pp-pa-8.mp3","pp-pa-9":"voice/pp-pa-9.mp3","pp-pa-10":"voice/pp-pa-10.mp3","pp-pa-11":"voice/pp-pa-11.mp3","pp-pa-12":"voice/pp-pa-12.mp3","pp-pa-13":"voice/pp-pa-13.mp3","pp-pa-14":"voice/pp-pa-14.mp3","pp-pa-15":"voice/pp-pa-15.mp3","pp-pa-16":"voice/pp-pa-16.mp3","pp-pa-17":"voice/pp-pa-17.mp3","pp-pa-18":"voice/pp-pa-18.mp3","pp-pa-19":"voice/pp-pa-19.mp3","pp-pa-20":"voice/pp-pa-20.mp3","pp-pa-21":"voice/pp-pa-21.mp3","pp-pa-22":"voice/pp-pa-22.mp3","pp-pa-23":"voice/pp-pa-23.mp3","pp-pa-24":"voice/pp-pa-24.mp3","pp-pa-25":"voice/pp-pa-25.mp3","pp-pa-26":"voice/pp-pa-26.mp3","pp-pa-27":"voice/pp-pa-27.mp3","pp-pa-28":"voice/pp-pa-28.mp3","pp-pa-29":"voice/pp-pa-29.mp3","pp-pa-30":"voice/pp-pa-30.mp3","pp-pa-31":"voice/pp-pa-31.mp3","pp-pa-32":"voice/pp-pa-32.mp3","pp-pa-33":"voice/pp-pa-33.mp3","pp-pa-34":"voice/pp-pa-34.mp3","pp-pa-35":"voice/pp-pa-35.mp3","pp-pa-36":"voice/pp-pa-36.mp3","pp-pa-37":"voice/pp-pa-37.mp3","pp-pa-38":"voice/pp-pa-38.mp3","pp-pa-39":"voice/pp-pa-39.mp3","pp-pa-40":"voice/pp-pa-40.mp3","pp-pa-41":"voice/pp-pa-41.mp3","pp-pa-42":"voice/pp-pa-42.mp3","pp-pa-43":"voice/pp-pa-43.mp3","pp-pa-44":"voice/pp-pa-44.mp3","pp-sd-1":"voice/pp-sd-1.mp3","pp-sd-2":"voice/pp-sd-2.mp3","pp-sd-3":"voice/pp-sd-3.mp3","pp-sd-4":"voice/pp-sd-4.mp3","pp-sd-5":"voice/pp-sd-5.mp3","pp-sd-6":"voice/pp-sd-6.mp3","pp-sd-7":"voice/pp-sd-7.mp3","pp-sd-8":"voice/pp-sd-8.mp3","pp-sd-9":"voice/pp-sd-9.mp3","pp-sd-10":"voice/pp-sd-10.mp3","pp-sd-11":"voice/pp-sd-11.mp3","pp-sd-12":"voice/pp-sd-12.mp3","pp-sd-13":"voice/pp-sd-13.mp3","pp-sd-14":"voice/pp-sd-14.mp3","pp-sd-15":"voice/pp-sd-15.mp3","pp-sd-16":"voice/pp-sd-16.mp3","pp-sd-17":"voice/pp-sd-17.mp3","pp-sd-18":"voice/pp-sd-18.mp3","pp-sd-19":"voice/pp-sd-19.mp3","pp-sd-20":"voice/pp-sd-20.mp3","pp-sd-21":"voice/pp-sd-21.mp3","pp-sd-22":"voice/pp-sd-22.mp3","pp-sd-23":"voice/pp-sd-23.mp3","pp-sd-24":"voice/pp-sd-24.mp3","pp-sd-25":"voice/pp-sd-25.mp3","pp-sd-26":"voice/pp-sd-26.mp3","pp-sd-27":"voice/pp-sd-27.mp3","pp-sd-28":"voice/pp-sd-28.mp3","pp-sd-29":"voice/pp-sd-29.mp3","pp-sd-30":"voice/pp-sd-30.mp3","pp-sd-31":"voice/pp-sd-31.mp3","pp-sd-32":"voice/pp-sd-32.mp3","pp-sd-33":"voice/pp-sd-33.mp3","pp-sd-34":"voice/pp-sd-34.mp3","pp-sd-35":"voice/pp-sd-35.mp3","pp-sd-36":"voice/pp-sd-36.mp3","pp-sd-37":"voice/pp-sd-37.mp3","pp-sd-38":"voice/pp-sd-38.mp3","pp-sd-39":"voice/pp-sd-39.mp3","pp-sd-40":"voice/pp-sd-40.mp3","pp-sd-41":"voice/pp-sd-41.mp3","pp-sd-42":"voice/pp-sd-42.mp3","pp-sd-43":"voice/pp-sd-43.mp3","pp-sd-44":"voice/pp-sd-44.mp3","pp-ar-1":"voice/pp-ar-1.mp3","pp-ar-2":"voice/pp-ar-2.mp3","pp-ar-3":"voice/pp-ar-3.mp3","pp-ar-4":"voice/pp-ar-4.mp3","pp-ar-5":"voice/pp-ar-5.mp3","pp-ar-6":"voice/pp-ar-6.mp3","pp-ar-7":"voice/pp-ar-7.mp3","pp-ar-8":"voice/pp-ar-8.mp3","pp-ar-9":"voice/pp-ar-9.mp3","pp-ar-10":"voice/pp-ar-10.mp3","pp-ar-11":"voice/pp-ar-11.mp3","pp-ar-12":"voice/pp-ar-12.mp3","pp-ar-13":"voice/pp-ar-13.mp3","pp-ar-14":"voice/pp-ar-14.mp3","pp-ar-15":"voice/pp-ar-15.mp3","pp-ar-16":"voice/pp-ar-16.mp3","pp-ar-17":"voice/pp-ar-17.mp3","pp-ar-18":"voice/pp-ar-18.mp3","pp-ar-19":"voice/pp-ar-19.mp3","pp-ar-20":"voice/pp-ar-20.mp3","pp-ar-21":"voice/pp-ar-21.mp3","pp-ar-22":"voice/pp-ar-22.mp3","pp-ar-23":"voice/pp-ar-23.mp3","pp-ar-24":"voice/pp-ar-24.mp3","pp-ar-25":"voice/pp-ar-25.mp3","pp-ar-26":"voice/pp-ar-26.mp3","pp-ar-27":"voice/pp-ar-27.mp3","pp-ar-28":"voice/pp-ar-28.mp3","pp-ar-29":"voice/pp-ar-29.mp3","pp-ar-30":"voice/pp-ar-30.mp3","pp-ar-31":"voice/pp-ar-31.mp3","pp-ar-32":"voice/pp-ar-32.mp3","pp-ar-33":"voice/pp-ar-33.mp3","pp-ar-34":"voice/pp-ar-34.mp3","pp-ar-35":"voice/pp-ar-35.mp3","pp-ar-36":"voice/pp-ar-36.mp3","pp-ar-37":"voice/pp-ar-37.mp3","pp-ar-38":"voice/pp-ar-38.mp3","pp-ar-39":"voice/pp-ar-39.mp3","pp-ar-40":"voice/pp-ar-40.mp3","pp-ar-41":"voice/pp-ar-41.mp3","pp-ar-42":"voice/pp-ar-42.mp3","pp-ar-43":"voice/pp-ar-43.mp3","pp-ar-44":"voice/pp-ar-44.mp3"};
       var clipFallback=null,clipToken=0,clipLoadTimer=null;
-      function stopRecorded(){ if(!clipAudio) return; clipToken++; clearTimeout(clipLoadTimer); try{ clipAudio.pause(); clipAudio.currentTime=0; }catch(e){} clipFallback=null; }
-      function playRecorded(clipId,mood,fallbackFn){
-        if(!voiceOn||!clipId||!RECORDED[clipId]||!clipAudio) return false;
-        if('speechSynthesis' in window){ try{ window.speechSynthesis.cancel(); }catch(e){} }
-        clearTimeout(speakTimer);
-        clipFallback=fallbackFn||null;
+      var clipQueue=null;
+      function stopRecorded(){ if(!clipAudio) return; clipToken++; clearTimeout(clipLoadTimer); clipQueue=null; try{ clipAudio.pause(); clipAudio.currentTime=0; }catch(e){} try{ clipAudio.onended=null; clipAudio.onerror=null; clipAudio.oncanplaythrough=null; }catch(e){} }
+      /* Queue player — recorded male voice ONLY. Plays clip ids in order
+         via clipAudio; a clip that errors or does not load within 10s is
+         skipped and the queue continues. onDone(allFailed) runs when the
+         queue ends; allFailed is true only when no clip at all played.
+         No phone TTS is used anywhere: with no recorded clip the bot
+         stays silent and the written answer is all the customer gets. */
+      function playRecorded(clipIds,mood,onDone){
+        if(!clipAudio){ if(onDone) onDone(true); return false; }
+        var ids=[];
+        for(var i=0;i<(clipIds||[]).length;i++){ var c=clipIds[i]; if(c&&RECORDED[c]) ids.push(c); }
+        if(!voiceOn||!ids.length){ if(onDone) onDone(true); return false; }
         var token=++clipToken;
-        clearTimeout(clipLoadTimer);
-        var done=false;
-        function clipFail(){ if(done) return; done=true; clearTimeout(clipLoadTimer); var fb=clipFallback; clipFallback=null; setBotState(mood==='sorry'?'sorry':'idle'); setStatusDefault(); if(fb) fb(); }
-        clipAudio.onended=function(){ if(token!==clipToken) return; clipFallback=null; setBotState(mood==='sorry'?'sorry':'idle'); setStatusDefault(); };
-        clipAudio.onerror=function(){ if(token!==clipToken) return; clipFail(); };
-        clipAudio.oncanplaythrough=function(){
-          if(token!==clipToken||done) return;
-          done=true; clearTimeout(clipLoadTimer);
+        var state={ids:ids,idx:0,mood:mood,onDone:onDone,playedAny:false,done:false};
+        clipQueue=state;
+        function finish(){ if(state.done) return; state.done=true; clearTimeout(clipLoadTimer); if(clipQueue===state) clipQueue=null; setBotState(mood==='sorry'?'sorry':'idle'); setStatusDefault(); if(onDone) onDone(!state.playedAny); }
+        function playNext(){
+          if(token!==clipToken||state.done) return;
+          if(state.idx>=state.ids.length){ finish(); return; }
+          var clipId=state.ids[state.idx++];
+          var done=false,started=false;
+          function nextClip(){ if(done) return; done=true; clearTimeout(clipLoadTimer); playNext(); }
+          clipAudio.onended=function(){ if(token!==clipToken) return; nextClip(); };
+          clipAudio.onerror=function(){ if(token!==clipToken) return; nextClip(); };
+          clipAudio.oncanplaythrough=function(){
+            if(token!==clipToken||done||started) return;
+            clearTimeout(clipLoadTimer);
+            try{
+              var pr=clipAudio.play();
+              started=true;
+              if(pr&&pr.then){ pr.then(function(){ if(token===clipToken&&mood!=='sorry') setBotState('talking'); setStatus('ریکارڈ شدہ مردانہ آواز میں جواب سنا رہا ہوں…'); state.playedAny=true; }).catch(function(){ nextClip(); }); }
+              else{ if(mood!=='sorry') setBotState('talking'); setStatus('ریکارڈ شدہ مردانہ آواز میں جواب سنا رہا ہوں…'); state.playedAny=true; }
+            }catch(e){ nextClip(); }
+          };
           try{
-            var pr=clipAudio.play();
-            if(pr&&pr.then){
-              pr.then(function(){ if(mood!=='sorry') setBotState('talking'); setStatus('ریکارڈ شدہ مردانہ آواز میں جواب سنا رہا ہوں…'); }).catch(function(){ clipFail(); });
-            }else{ if(mood!=='sorry') setBotState('talking'); setStatus('ریکارڈ شدہ مردانہ آواز میں جواب سنا رہا ہوں…'); }
-          }catch(e){ clipFail(); }
-        };
-        try{
-          clipAudio.pause();
-          clipAudio.src=RECORDED[clipId];
-          clipAudio.load();
-          clipLoadTimer=setTimeout(function(){ if(token===clipToken) clipFail(); },10000);
-          return true;
-        }catch(e){ var fb2=clipFallback; clipFallback=null; if(fb2) fb2(); return false; }
+            clipAudio.pause();
+            clipAudio.src=RECORDED[clipId];
+            clipAudio.load();
+            clipLoadTimer=setTimeout(function(){ if(token===clipToken&&!started) nextClip(); },10000);
+          }catch(e){ nextClip(); }
+        }
+        playNext();
+        return true;
       }
-      function speakReply(html,mood,clip){
+      function speakReply(reply){
+        if(!reply) return;
+        var html=reply.html||'',mood=reply.mood||'happy';
         var text=stripHtml(html);
         if(!text) return;
-        /* Recorded clips are language-matched audio (plain ids = Urdu, <lang>- prefixes = that language): play them only when the
-           reply is in that same language — never Urdu audio for a Farsi,
-           Pashto, Sindhi, Punjabi, Arabic or English reply. Other languages
-           use a verified male TTS voice for their own language, or stay
-           silent text-only when the phone has no such male voice. */
-        var rl=atReplyLang||replyLang(text);
-        var clipOk=false;
-        if(clip){ var _cm={'fa-':'fa-IR','ps-':'ps-AF','en-':'en-US','pa-':'pa-PK','sd-':'sd-PK','ar-':'ar-SA'}; var _cp=clip.slice(0,3); clipOk=_cm[_cp]?(rl===_cm[_cp]):(rl==='ur-PK'); }
-        if(clipOk&&playRecorded(clip,mood,function(){ speakText(text,mood); })) { atReplyLang=null; return; }
-        speakText(text,mood);
+        var lang=atReplyLang||replyLang(text);
         atReplyLang=null;
+        if(!voiceOn){ setBotState('idle'); return; }
+        var queue=reply.queue;
+        if(!queue){ queue=reply.clip?[reply.clip]:[]; }
+        var ids=[];
+        for(var i=0;i<queue.length;i++){ if(queue[i]&&RECORDED[queue[i]]) ids.push(queue[i]); }
+        if(!ids.length){ setBotState('idle'); showVoiceNote(lang,'noVoice'); return; }
+        playRecorded(ids,mood,function(allFailed){
+          if(allFailed){ showVoiceNote(lang,'noVoice'); }
+          else if(reply.noteKind){ showVoiceNote(lang,reply.noteKind); }
+        });
       }
-      if('speechSynthesis' in window){ try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=function(){ window.speechSynthesis.getVoices(); }; }catch(e){} }
       if(voiceToggle){
         voiceToggle.addEventListener('click',function(){
           voiceOn=!voiceOn;
           voiceToggle.classList.toggle('at-off',!voiceOn);
           document.getElementById('atVoiceOnIcon').style.display=voiceOn?'':'none';
           document.getElementById('atVoiceOffIcon').style.display=voiceOn?'none':'';
-          if(!voiceOn){ stopRecorded(); if('speechSynthesis' in window){ try{ window.speechSynthesis.cancel(); }catch(e){} } setBotState('idle'); setStatusDefault(); }
+          if(!voiceOn){ stopRecorded(); setBotState('idle'); setStatusDefault(); }
           atToast(voiceOn?'بوٹ کی آواز آن کر دی گئی ہے — اب جواب بول کر بھی سنائے گا۔':'بوٹ کی آواز بند کر دی گئی ہے — جواب صرف لکھ کر آئے گا۔');
         });
       }
@@ -4400,7 +4398,6 @@ let reviewStars = 5;
       function micNotice(text){ addBot('<p>'+text+'</p>','sorry'); setBotState('sorry'); }
       function startMic(){
         userInteracted=true; greetingSpoken=true; stopRecorded();
-        if('speechSynthesis' in window){ try{ window.speechSynthesis.cancel(); }catch(e){} }
         if(listening){ try{ recognition.stop(); }catch(e){} setListeningUI(false); return; }
         var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
         if(!SR){ micNotice('معذرت خواہ ہوں، اس فون یا براؤزر میں مائیک سے بولنے کی سہولت موجود نہیں ہے۔ آپ لکھ کر بات کر لیں، میں اسی طرح ادب سے جواب دوں گا۔'); return; }
@@ -4428,7 +4425,6 @@ let reviewStars = 5;
         try{ recognition.start(); setListeningUI(true); }catch(e){ setListeningUI(false); }
       }
       if(micBtn) micBtn.addEventListener('click',startMic);
-      var GREETING_SPEAK='السلام علیکم ورحمۃ اللہ وبرکاتہ! میں آصف ٹریڈرز کا مددگار ہوں۔ مجھ سے کسی چیز کی قیمت پوچھیں، پروڈکٹ دکھانے کو کہیں، آج کی آفر سنیں، یا اپنے آرڈر کی خبر لیں۔ بتائیں، آج کس چیز کی مدد کروں؟';
       /* ---- Open / close the chat window ---- */
       function openChat(){
         win.classList.add('at-open');
@@ -4436,12 +4432,12 @@ let reviewStars = 5;
         if(!greetedInChat){
           greetedInChat=true;
           greetingSpoken=true;
-          /* فاب کا ٹیپ صارف کا اشارہ ہے — سلام کی آواز فوراً چلائیں (ریکارڈ شدہ مردانہ آواز، ورنہ مردانہ TTS) */
+          /* فاب کا ٹیپ صارف کا اشارہ ہے — سلام کی آواز فوراً چلائیں (صرف ریکارڈ شدہ مردانہ آواز؛ کوئی TTS نہیں) */
           (function(){
-            var gText=GREETING_SPEAK, gClip='greeting';
-            if(atBotLang&&LANG_REPLIES[atBotLang]){ gText=stripHtml(LANG_REPLIES[atBotLang].greet); gClip=atBotLang+'-greeting'; atReplyLang=LANG_CODE[atBotLang]; }
-            if(gClip){ if(!playRecorded(gClip,'wave',function(){ speakText(gText,'wave'); })) speakText(gText,'wave'); }
-            else speakText(gText,'wave');
+            var gLang=(atBotLang==='roman')?'ur':atBotLang;
+            var gClip=(gLang&&LANG_REPLIES[gLang])?(gLang==='ur'?'greeting':gLang+'-greeting'):'greeting';
+            var gNoteLang=(atBotLang&&LANG_CODE[atBotLang])||'ur-PK';
+            playRecorded([gClip],'wave',function(allFailed){ if(allFailed) showVoiceNote(gNoteLang,'noVoice'); });
           })();
           setTimeout(function(){
             showTyping(function(){
@@ -4451,7 +4447,7 @@ let reviewStars = 5;
         }
         setTimeout(function(){ input.focus({preventScroll:true}); },450);
       }
-      function closeChat(){ win.classList.remove('at-open'); setBotState('idle'); stopRecorded(); if('speechSynthesis' in window){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
+      function closeChat(){ win.classList.remove('at-open'); setBotState('idle'); stopRecorded(); }
       fab.addEventListener('click',function(){
         if(win.classList.contains('at-open')) closeChat();
         else { userInteracted=true; openChat(); }
